@@ -7,100 +7,100 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		15D782D985CB46BAB54ADFA9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0CAB0B01F24093AD53F0CC /* AppDelegate.swift */; };
-		5BDF1442302E46AEA7FD1BC3 /* DynamicIslandApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6510B8AB5E642CEA45426BE /* DynamicIslandApp.swift */; };
-		7A75142115FE449CA0CE2F3C /* MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170A6C833FC24B7A8C9D98F5 /* MediaItem.swift */; };
-		B4C4327303CE434EAB345253 /* NetworkStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802FE31A1BF4402BAE75C37C /* NetworkStats.swift */; };
-		9C885EC3346D49849C82617E /* SystemStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40922A2F7A7449E792F62D34 /* SystemStats.swift */; };
-		14C5B2A05257412BB1251760 /* TimerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB596A4CA034CA2814F2F95 /* TimerModel.swift */; };
-		268BA9FB2CB149009A918125 /* DropShelfService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791E3178A0DF4281B714D310 /* DropShelfService.swift */; };
-		3ABA9EE177DE4767BDF57A0F /* MediaControllerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBA9E919CCA4AABA3204137 /* MediaControllerService.swift */; };
-		2316DE8B202D4CD08240746F /* NetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFFD61414F24CB4918F6D88 /* NetworkMonitorService.swift */; };
-		143C4ACFC7ED403DBA47C59F /* SystemMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4EC79AA2C406092917B68 /* SystemMonitorService.swift */; };
-		9CA59F6C4AC54B9BB4E580A1 /* CompactIslandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315658E10B364DEEBF349159 /* CompactIslandView.swift */; };
-		AACBA05882954995990E28E5 /* GlowingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7C96A8350848D39E6F81C6 /* GlowingBadge.swift */; };
-		D493D43006A048FD87A8B5D0 /* SparklineChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC3483D808345EDB51EBDBE /* SparklineChart.swift */; };
-		185A3BBAACD9467C99A7DE70 /* ExpandedIslandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C120664C16541708ADFC845 /* ExpandedIslandView.swift */; };
-		F5E24940E4864A43AFA514F2 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C52CECE51E4E7791D59126 /* HomeView.swift */; };
-		A7F36165BF07440DB0E8C99F /* NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7971E6082F4944BCC2398B /* NowPlayingView.swift */; };
-		10AAE29E9A3442109880A2D8 /* NotchContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA71FDAAE52B4D688D1E500F /* NotchContainerView.swift */; };
-		06F6B9C6455749AE9DBC9979 /* DropShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901B1448DFC8481783618EB3 /* DropShelfView.swift */; };
-		F0BB47762B6B454DB9288684 /* MetricCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB009893F3F442CABB0E2AD /* MetricCardView.swift */; };
-		ECE0A02662184E9E9AF70523 /* NetworkDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA82FF63F9DE4BB5B14ECD7F /* NetworkDetailView.swift */; };
-		6F8884E4A3CD4EA7821E0C70 /* SystemDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9FB03B982614690BD46524D /* SystemDetailViews.swift */; };
-		D964FB31CAA6437F8C61E81B /* SystemOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9590FF2ACB1B4A98943416D5 /* SystemOverviewView.swift */; };
-		9D97E72253524674B44D4C98 /* RulerSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F9746E0A154CA98135B62D /* RulerSliderView.swift */; };
-		601118EC2EB1429DBCCC9D73 /* TimerDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BE33C75AE84840BDAFF5DD /* TimerDashboardView.swift */; };
-		CB1304842B1A480FAB91AA4B /* InteractiveHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70672556C3EF496DA70FBEDE /* InteractiveHostingView.swift */; };
-		A2E12BC99DDB40D5B84452F2 /* NotchPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3B336507C549FB9BD591DF /* NotchPanel.swift */; };
-		F06B1E728935446AA7DC993B /* NotchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A91AF02EAF94993A1959F81 /* NotchViewModel.swift */; };
-		90DE265853914830A8E37E4D /* NotchWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07AD76ABE04E4FB697AE0B24 /* NotchWindowController.swift */; };
-		B10000010000000000000001 /* AgentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000001 /* AgentModel.swift */; };
-		B10000020000000000000002 /* HUDEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000002 /* HUDEvent.swift */; };
-		B10000030000000000000003 /* AgentCompanionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000030000000000000003 /* AgentCompanionService.swift */; };
-		B10000040000000000000004 /* SystemHUDService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000040000000000000004 /* SystemHUDService.swift */; };
-		B10000050000000000000005 /* AgentDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000050000000000000005 /* AgentDashboardView.swift */; };
-		B10000060000000000000006 /* IslandHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000060000000000000006 /* IslandHUDView.swift */; };
-		B10000070000000000000007 /* AgentAutoDetectorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000070000000000000007 /* AgentAutoDetectorService.swift */; };
-		B10000080000000000000008 /* NotchSquircleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000080000000000000008 /* NotchSquircleShape.swift */; };
-		B10000090000000000000009 /* WeatherModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000090000000000000009 /* WeatherModel.swift */; };
-		B10000100000000000000010 /* CalendarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000100000000000000010 /* CalendarModel.swift */; };
-		B10000110000000000000011 /* WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000110000000000000011 /* WeatherService.swift */; };
-		B10000120000000000000012 /* CalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000120000000000000012 /* CalendarService.swift */; };
-		B10000130000000000000013 /* WeatherDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000130000000000000013 /* WeatherDashboardView.swift */; };
-		B10000140000000000000014 /* CalendarDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000140000000000000014 /* CalendarDashboardView.swift */; };
-		B10000150000000000000015 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000150000000000000015 /* Assets.xcassets */; };
-		B10000160000000000000016 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A10000160000000000000016 /* AppIcon.icns */; };
+		06F6B9C6455749AE9DBC9979 /* DynamicIsland/Views/Shelf/DropShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 901B1448DFC8481783618EB3 /* DynamicIsland/Views/Shelf/DropShelfView.swift */; };
+		10AAE29E9A3442109880A2D8 /* DynamicIsland/Views/NotchContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA71FDAAE52B4D688D1E500F /* DynamicIsland/Views/NotchContainerView.swift */; };
+		143C4ACFC7ED403DBA47C59F /* DynamicIsland/Services/SystemMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A4EC79AA2C406092917B68 /* DynamicIsland/Services/SystemMonitorService.swift */; };
+		14C5B2A05257412BB1251760 /* DynamicIsland/Models/TimerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB596A4CA034CA2814F2F95 /* DynamicIsland/Models/TimerModel.swift */; };
+		15D782D985CB46BAB54ADFA9 /* DynamicIsland/AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F0CAB0B01F24093AD53F0CC /* DynamicIsland/AppDelegate.swift */; };
+		185A3BBAACD9467C99A7DE70 /* DynamicIsland/Views/ExpandedIslandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C120664C16541708ADFC845 /* DynamicIsland/Views/ExpandedIslandView.swift */; };
+		2316DE8B202D4CD08240746F /* DynamicIsland/Services/NetworkMonitorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAFFD61414F24CB4918F6D88 /* DynamicIsland/Services/NetworkMonitorService.swift */; };
+		268BA9FB2CB149009A918125 /* DynamicIsland/Services/DropShelfService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 791E3178A0DF4281B714D310 /* DynamicIsland/Services/DropShelfService.swift */; };
+		3ABA9EE177DE4767BDF57A0F /* DynamicIsland/Services/MediaControllerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EBA9E919CCA4AABA3204137 /* DynamicIsland/Services/MediaControllerService.swift */; };
+		5BDF1442302E46AEA7FD1BC3 /* DynamicIsland/DynamicIslandApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6510B8AB5E642CEA45426BE /* DynamicIsland/DynamicIslandApp.swift */; };
+		601118EC2EB1429DBCCC9D73 /* DynamicIsland/Views/Timers/TimerDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BE33C75AE84840BDAFF5DD /* DynamicIsland/Views/Timers/TimerDashboardView.swift */; };
+		6F8884E4A3CD4EA7821E0C70 /* DynamicIsland/Views/System/SystemDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9FB03B982614690BD46524D /* DynamicIsland/Views/System/SystemDetailViews.swift */; };
+		7A75142115FE449CA0CE2F3C /* DynamicIsland/Models/MediaItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170A6C833FC24B7A8C9D98F5 /* DynamicIsland/Models/MediaItem.swift */; };
+		90DE265853914830A8E37E4D /* DynamicIsland/Window/NotchWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07AD76ABE04E4FB697AE0B24 /* DynamicIsland/Window/NotchWindowController.swift */; };
+		9C885EC3346D49849C82617E /* DynamicIsland/Models/SystemStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40922A2F7A7449E792F62D34 /* DynamicIsland/Models/SystemStats.swift */; };
+		9CA59F6C4AC54B9BB4E580A1 /* DynamicIsland/Views/CompactIslandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315658E10B364DEEBF349159 /* DynamicIsland/Views/CompactIslandView.swift */; };
+		9D97E72253524674B44D4C98 /* DynamicIsland/Views/Timers/RulerSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7F9746E0A154CA98135B62D /* DynamicIsland/Views/Timers/RulerSliderView.swift */; };
+		A2E12BC99DDB40D5B84452F2 /* DynamicIsland/Window/NotchPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C3B336507C549FB9BD591DF /* DynamicIsland/Window/NotchPanel.swift */; };
+		A7F36165BF07440DB0E8C99F /* DynamicIsland/Views/Media/NowPlayingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E7971E6082F4944BCC2398B /* DynamicIsland/Views/Media/NowPlayingView.swift */; };
+		AACBA05882954995990E28E5 /* DynamicIsland/Views/Components/GlowingBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF7C96A8350848D39E6F81C6 /* DynamicIsland/Views/Components/GlowingBadge.swift */; };
+		B10000010000000000000001 /* DynamicIsland/Models/AgentModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000010000000000000001 /* DynamicIsland/Models/AgentModel.swift */; };
+		B10000020000000000000002 /* DynamicIsland/Models/HUDEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000020000000000000002 /* DynamicIsland/Models/HUDEvent.swift */; };
+		B10000030000000000000003 /* DynamicIsland/Services/AgentCompanionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000030000000000000003 /* DynamicIsland/Services/AgentCompanionService.swift */; };
+		B10000040000000000000004 /* DynamicIsland/Services/SystemHUDService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000040000000000000004 /* DynamicIsland/Services/SystemHUDService.swift */; };
+		B10000050000000000000005 /* DynamicIsland/Views/Agent/AgentDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000050000000000000005 /* DynamicIsland/Views/Agent/AgentDashboardView.swift */; };
+		B10000060000000000000006 /* DynamicIsland/Views/HUD/IslandHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000060000000000000006 /* DynamicIsland/Views/HUD/IslandHUDView.swift */; };
+		B10000070000000000000007 /* DynamicIsland/Services/AgentAutoDetectorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000070000000000000007 /* DynamicIsland/Services/AgentAutoDetectorService.swift */; };
+		B10000080000000000000008 /* DynamicIsland/Views/Components/NotchSquircleShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000080000000000000008 /* DynamicIsland/Views/Components/NotchSquircleShape.swift */; };
+		B10000090000000000000009 /* DynamicIsland/Models/WeatherModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000090000000000000009 /* DynamicIsland/Models/WeatherModel.swift */; };
+		B10000100000000000000010 /* DynamicIsland/Models/CalendarModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000100000000000000010 /* DynamicIsland/Models/CalendarModel.swift */; };
+		B10000110000000000000011 /* DynamicIsland/Services/WeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000110000000000000011 /* DynamicIsland/Services/WeatherService.swift */; };
+		B10000120000000000000012 /* DynamicIsland/Services/CalendarService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000120000000000000012 /* DynamicIsland/Services/CalendarService.swift */; };
+		B10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift */; };
+		B10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift */; };
+		B10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */; };
+		B10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */; };
+		B4C4327303CE434EAB345253 /* DynamicIsland/Models/NetworkStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802FE31A1BF4402BAE75C37C /* DynamicIsland/Models/NetworkStats.swift */; };
+		CB1304842B1A480FAB91AA4B /* DynamicIsland/Window/InteractiveHostingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70672556C3EF496DA70FBEDE /* DynamicIsland/Window/InteractiveHostingView.swift */; };
+		D493D43006A048FD87A8B5D0 /* DynamicIsland/Views/Components/SparklineChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC3483D808345EDB51EBDBE /* DynamicIsland/Views/Components/SparklineChart.swift */; };
+		D964FB31CAA6437F8C61E81B /* DynamicIsland/Views/System/SystemOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9590FF2ACB1B4A98943416D5 /* DynamicIsland/Views/System/SystemOverviewView.swift */; };
+		ECE0A02662184E9E9AF70523 /* DynamicIsland/Views/System/NetworkDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA82FF63F9DE4BB5B14ECD7F /* DynamicIsland/Views/System/NetworkDetailView.swift */; };
+		F06B1E728935446AA7DC993B /* DynamicIsland/Window/NotchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A91AF02EAF94993A1959F81 /* DynamicIsland/Window/NotchViewModel.swift */; };
+		F0BB47762B6B454DB9288684 /* DynamicIsland/Views/System/MetricCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCB009893F3F442CABB0E2AD /* DynamicIsland/Views/System/MetricCardView.swift */; };
+		F5E24940E4864A43AFA514F2 /* DynamicIsland/Views/Home/HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C52CECE51E4E7791D59126 /* DynamicIsland/Views/Home/HomeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		CB31880C202F4CDC9C12C524 /* DynamicIsland.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DynamicIsland.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CF0FF6B1B56A4939A03E202F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = DynamicIsland/Resources/Info.plist; sourceTree = "<group>"; };
-		2F9A925691A941BE830067FF /* DynamicIsland.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DynamicIsland/Resources/DynamicIsland.entitlements; sourceTree = "<group>"; };
-		A10000150000000000000015 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DynamicIsland/Resources/Assets.xcassets; sourceTree = "<group>"; };
-		A10000160000000000000016 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = DynamicIsland/Resources/AppIcon.icns; sourceTree = "<group>"; };
-		3F0CAB0B01F24093AD53F0CC /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/AppDelegate.swift"; sourceTree = "<group>"; };
-		E6510B8AB5E642CEA45426BE /* DynamicIslandApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/DynamicIslandApp.swift"; sourceTree = "<group>"; };
-		170A6C833FC24B7A8C9D98F5 /* MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/MediaItem.swift"; sourceTree = "<group>"; };
-		802FE31A1BF4402BAE75C37C /* NetworkStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/NetworkStats.swift"; sourceTree = "<group>"; };
-		40922A2F7A7449E792F62D34 /* SystemStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/SystemStats.swift"; sourceTree = "<group>"; };
-		6DB596A4CA034CA2814F2F95 /* TimerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/TimerModel.swift"; sourceTree = "<group>"; };
-		791E3178A0DF4281B714D310 /* DropShelfService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/DropShelfService.swift"; sourceTree = "<group>"; };
-		3EBA9E919CCA4AABA3204137 /* MediaControllerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/MediaControllerService.swift"; sourceTree = "<group>"; };
-		CAFFD61414F24CB4918F6D88 /* NetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/NetworkMonitorService.swift"; sourceTree = "<group>"; };
-		D1A4EC79AA2C406092917B68 /* SystemMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/SystemMonitorService.swift"; sourceTree = "<group>"; };
-		315658E10B364DEEBF349159 /* CompactIslandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/CompactIslandView.swift"; sourceTree = "<group>"; };
-		DF7C96A8350848D39E6F81C6 /* GlowingBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Components/GlowingBadge.swift"; sourceTree = "<group>"; };
-		ABC3483D808345EDB51EBDBE /* SparklineChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Components/SparklineChart.swift"; sourceTree = "<group>"; };
-		4C120664C16541708ADFC845 /* ExpandedIslandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/ExpandedIslandView.swift"; sourceTree = "<group>"; };
-		F4C52CECE51E4E7791D59126 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Home/HomeView.swift"; sourceTree = "<group>"; };
-		5E7971E6082F4944BCC2398B /* NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Media/NowPlayingView.swift"; sourceTree = "<group>"; };
-		EA71FDAAE52B4D688D1E500F /* NotchContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/NotchContainerView.swift"; sourceTree = "<group>"; };
-		901B1448DFC8481783618EB3 /* DropShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Shelf/DropShelfView.swift"; sourceTree = "<group>"; };
-		FCB009893F3F442CABB0E2AD /* MetricCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/System/MetricCardView.swift"; sourceTree = "<group>"; };
-		EA82FF63F9DE4BB5B14ECD7F /* NetworkDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/System/NetworkDetailView.swift"; sourceTree = "<group>"; };
-		C9FB03B982614690BD46524D /* SystemDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/System/SystemDetailViews.swift"; sourceTree = "<group>"; };
-		9590FF2ACB1B4A98943416D5 /* SystemOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/System/SystemOverviewView.swift"; sourceTree = "<group>"; };
-		D7F9746E0A154CA98135B62D /* RulerSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Timers/RulerSliderView.swift"; sourceTree = "<group>"; };
-		64BE33C75AE84840BDAFF5DD /* TimerDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Timers/TimerDashboardView.swift"; sourceTree = "<group>"; };
-		70672556C3EF496DA70FBEDE /* InteractiveHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Window/InteractiveHostingView.swift"; sourceTree = "<group>"; };
-		6C3B336507C549FB9BD591DF /* NotchPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Window/NotchPanel.swift"; sourceTree = "<group>"; };
-		2A91AF02EAF94993A1959F81 /* NotchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Window/NotchViewModel.swift"; sourceTree = "<group>"; };
-		07AD76ABE04E4FB697AE0B24 /* NotchWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Window/NotchWindowController.swift"; sourceTree = "<group>"; };
-		A10000010000000000000001 /* AgentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/AgentModel.swift"; sourceTree = "<group>"; };
-		A10000020000000000000002 /* HUDEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/HUDEvent.swift"; sourceTree = "<group>"; };
-		A10000030000000000000003 /* AgentCompanionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/AgentCompanionService.swift"; sourceTree = "<group>"; };
-		A10000040000000000000004 /* SystemHUDService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/SystemHUDService.swift"; sourceTree = "<group>"; };
-		A10000050000000000000005 /* AgentDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Agent/AgentDashboardView.swift"; sourceTree = "<group>"; };
-		A10000060000000000000006 /* IslandHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/HUD/IslandHUDView.swift"; sourceTree = "<group>"; };
-		A10000070000000000000007 /* AgentAutoDetectorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/AgentAutoDetectorService.swift"; sourceTree = "<group>"; };
-		A10000080000000000000008 /* NotchSquircleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Components/NotchSquircleShape.swift"; sourceTree = "<group>"; };
-		A10000090000000000000009 /* WeatherModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/WeatherModel.swift"; sourceTree = "<group>"; };
-		A10000100000000000000010 /* CalendarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Models/CalendarModel.swift"; sourceTree = "<group>"; };
-		A10000110000000000000011 /* WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/WeatherService.swift"; sourceTree = "<group>"; };
-		A10000120000000000000012 /* CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Services/CalendarService.swift"; sourceTree = "<group>"; };
-		A10000130000000000000013 /* WeatherDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Weather/WeatherDashboardView.swift"; sourceTree = "<group>"; };
-		A10000140000000000000014 /* CalendarDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DynamicIsland/Views/Calendar/CalendarDashboardView.swift"; sourceTree = "<group>"; };
+		07AD76ABE04E4FB697AE0B24 /* DynamicIsland/Window/NotchWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Window/NotchWindowController.swift; sourceTree = "<group>"; };
+		170A6C833FC24B7A8C9D98F5 /* DynamicIsland/Models/MediaItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/MediaItem.swift; sourceTree = "<group>"; };
+		2A91AF02EAF94993A1959F81 /* DynamicIsland/Window/NotchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Window/NotchViewModel.swift; sourceTree = "<group>"; };
+		2F9A925691A941BE830067FF /* DynamicIsland/Resources/DynamicIsland.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DynamicIsland/Resources/DynamicIsland.entitlements; sourceTree = "<group>"; };
+		315658E10B364DEEBF349159 /* DynamicIsland/Views/CompactIslandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/CompactIslandView.swift; sourceTree = "<group>"; };
+		3EBA9E919CCA4AABA3204137 /* DynamicIsland/Services/MediaControllerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/MediaControllerService.swift; sourceTree = "<group>"; };
+		3F0CAB0B01F24093AD53F0CC /* DynamicIsland/AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/AppDelegate.swift; sourceTree = "<group>"; };
+		40922A2F7A7449E792F62D34 /* DynamicIsland/Models/SystemStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/SystemStats.swift; sourceTree = "<group>"; };
+		4C120664C16541708ADFC845 /* DynamicIsland/Views/ExpandedIslandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/ExpandedIslandView.swift; sourceTree = "<group>"; };
+		5E7971E6082F4944BCC2398B /* DynamicIsland/Views/Media/NowPlayingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Media/NowPlayingView.swift; sourceTree = "<group>"; };
+		64BE33C75AE84840BDAFF5DD /* DynamicIsland/Views/Timers/TimerDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Timers/TimerDashboardView.swift; sourceTree = "<group>"; };
+		6C3B336507C549FB9BD591DF /* DynamicIsland/Window/NotchPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Window/NotchPanel.swift; sourceTree = "<group>"; };
+		6DB596A4CA034CA2814F2F95 /* DynamicIsland/Models/TimerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/TimerModel.swift; sourceTree = "<group>"; };
+		70672556C3EF496DA70FBEDE /* DynamicIsland/Window/InteractiveHostingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Window/InteractiveHostingView.swift; sourceTree = "<group>"; };
+		791E3178A0DF4281B714D310 /* DynamicIsland/Services/DropShelfService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/DropShelfService.swift; sourceTree = "<group>"; };
+		802FE31A1BF4402BAE75C37C /* DynamicIsland/Models/NetworkStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/NetworkStats.swift; sourceTree = "<group>"; };
+		901B1448DFC8481783618EB3 /* DynamicIsland/Views/Shelf/DropShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Shelf/DropShelfView.swift; sourceTree = "<group>"; };
+		9590FF2ACB1B4A98943416D5 /* DynamicIsland/Views/System/SystemOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/System/SystemOverviewView.swift; sourceTree = "<group>"; };
+		A10000010000000000000001 /* DynamicIsland/Models/AgentModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/AgentModel.swift; sourceTree = "<group>"; };
+		A10000020000000000000002 /* DynamicIsland/Models/HUDEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/HUDEvent.swift; sourceTree = "<group>"; };
+		A10000030000000000000003 /* DynamicIsland/Services/AgentCompanionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/AgentCompanionService.swift; sourceTree = "<group>"; };
+		A10000040000000000000004 /* DynamicIsland/Services/SystemHUDService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/SystemHUDService.swift; sourceTree = "<group>"; };
+		A10000050000000000000005 /* DynamicIsland/Views/Agent/AgentDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Agent/AgentDashboardView.swift; sourceTree = "<group>"; };
+		A10000060000000000000006 /* DynamicIsland/Views/HUD/IslandHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/HUD/IslandHUDView.swift; sourceTree = "<group>"; };
+		A10000070000000000000007 /* DynamicIsland/Services/AgentAutoDetectorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/AgentAutoDetectorService.swift; sourceTree = "<group>"; };
+		A10000080000000000000008 /* DynamicIsland/Views/Components/NotchSquircleShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Components/NotchSquircleShape.swift; sourceTree = "<group>"; };
+		A10000090000000000000009 /* DynamicIsland/Models/WeatherModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/WeatherModel.swift; sourceTree = "<group>"; };
+		A10000100000000000000010 /* DynamicIsland/Models/CalendarModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/CalendarModel.swift; sourceTree = "<group>"; };
+		A10000110000000000000011 /* DynamicIsland/Services/WeatherService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/WeatherService.swift; sourceTree = "<group>"; };
+		A10000120000000000000012 /* DynamicIsland/Services/CalendarService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/CalendarService.swift; sourceTree = "<group>"; };
+		A10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Weather/WeatherDashboardView.swift; sourceTree = "<group>"; };
+		A10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Calendar/CalendarDashboardView.swift; sourceTree = "<group>"; };
+		A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DynamicIsland/Resources/Assets.xcassets; sourceTree = "<group>"; };
+		A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = DynamicIsland/Resources/AppIcon.icns; sourceTree = "<group>"; };
+		ABC3483D808345EDB51EBDBE /* DynamicIsland/Views/Components/SparklineChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Components/SparklineChart.swift; sourceTree = "<group>"; };
+		C9FB03B982614690BD46524D /* DynamicIsland/Views/System/SystemDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/System/SystemDetailViews.swift; sourceTree = "<group>"; };
+		CAFFD61414F24CB4918F6D88 /* DynamicIsland/Services/NetworkMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/NetworkMonitorService.swift; sourceTree = "<group>"; };
+		CB31880C202F4CDC9C12C524 /* NotchBay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NotchBay.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF0FF6B1B56A4939A03E202F /* DynamicIsland/Resources/Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = DynamicIsland/Resources/Info.plist; sourceTree = "<group>"; };
+		D1A4EC79AA2C406092917B68 /* DynamicIsland/Services/SystemMonitorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/SystemMonitorService.swift; sourceTree = "<group>"; };
+		D7F9746E0A154CA98135B62D /* DynamicIsland/Views/Timers/RulerSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Timers/RulerSliderView.swift; sourceTree = "<group>"; };
+		DF7C96A8350848D39E6F81C6 /* DynamicIsland/Views/Components/GlowingBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Components/GlowingBadge.swift; sourceTree = "<group>"; };
+		E6510B8AB5E642CEA45426BE /* DynamicIsland/DynamicIslandApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/DynamicIslandApp.swift; sourceTree = "<group>"; };
+		EA71FDAAE52B4D688D1E500F /* DynamicIsland/Views/NotchContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/NotchContainerView.swift; sourceTree = "<group>"; };
+		EA82FF63F9DE4BB5B14ECD7F /* DynamicIsland/Views/System/NetworkDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/System/NetworkDetailView.swift; sourceTree = "<group>"; };
+		F4C52CECE51E4E7791D59126 /* DynamicIsland/Views/Home/HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Home/HomeView.swift; sourceTree = "<group>"; };
+		FCB009893F3F442CABB0E2AD /* DynamicIsland/Views/System/MetricCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/System/MetricCardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,65 +114,65 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		DB994C97CBB1416D9932E2C0 = {
-			isa = PBXGroup;
-			children = (
-				3F0CAB0B01F24093AD53F0CC /* AppDelegate.swift */,
-				E6510B8AB5E642CEA45426BE /* DynamicIslandApp.swift */,
-				170A6C833FC24B7A8C9D98F5 /* MediaItem.swift */,
-				802FE31A1BF4402BAE75C37C /* NetworkStats.swift */,
-				40922A2F7A7449E792F62D34 /* SystemStats.swift */,
-				6DB596A4CA034CA2814F2F95 /* TimerModel.swift */,
-				791E3178A0DF4281B714D310 /* DropShelfService.swift */,
-				3EBA9E919CCA4AABA3204137 /* MediaControllerService.swift */,
-				CAFFD61414F24CB4918F6D88 /* NetworkMonitorService.swift */,
-				D1A4EC79AA2C406092917B68 /* SystemMonitorService.swift */,
-				315658E10B364DEEBF349159 /* CompactIslandView.swift */,
-				DF7C96A8350848D39E6F81C6 /* GlowingBadge.swift */,
-				ABC3483D808345EDB51EBDBE /* SparklineChart.swift */,
-				4C120664C16541708ADFC845 /* ExpandedIslandView.swift */,
-				F4C52CECE51E4E7791D59126 /* HomeView.swift */,
-				5E7971E6082F4944BCC2398B /* NowPlayingView.swift */,
-				EA71FDAAE52B4D688D1E500F /* NotchContainerView.swift */,
-				901B1448DFC8481783618EB3 /* DropShelfView.swift */,
-				FCB009893F3F442CABB0E2AD /* MetricCardView.swift */,
-				EA82FF63F9DE4BB5B14ECD7F /* NetworkDetailView.swift */,
-				C9FB03B982614690BD46524D /* SystemDetailViews.swift */,
-				9590FF2ACB1B4A98943416D5 /* SystemOverviewView.swift */,
-				D7F9746E0A154CA98135B62D /* RulerSliderView.swift */,
-				64BE33C75AE84840BDAFF5DD /* TimerDashboardView.swift */,
-				70672556C3EF496DA70FBEDE /* InteractiveHostingView.swift */,
-				6C3B336507C549FB9BD591DF /* NotchPanel.swift */,
-				2A91AF02EAF94993A1959F81 /* NotchViewModel.swift */,
-				07AD76ABE04E4FB697AE0B24 /* NotchWindowController.swift */,
-				A10000010000000000000001 /* AgentModel.swift */,
-				A10000020000000000000002 /* HUDEvent.swift */,
-				A10000030000000000000003 /* AgentCompanionService.swift */,
-				A10000040000000000000004 /* SystemHUDService.swift */,
-				A10000050000000000000005 /* AgentDashboardView.swift */,
-				A10000060000000000000006 /* IslandHUDView.swift */,
-				A10000070000000000000007 /* AgentAutoDetectorService.swift */,
-				A10000080000000000000008 /* NotchSquircleShape.swift */,
-				A10000090000000000000009 /* WeatherModel.swift */,
-				A10000100000000000000010 /* CalendarModel.swift */,
-				A10000110000000000000011 /* WeatherService.swift */,
-				A10000120000000000000012 /* CalendarService.swift */,
-				A10000130000000000000013 /* WeatherDashboardView.swift */,
-				A10000140000000000000014 /* CalendarDashboardView.swift */,
-				CF0FF6B1B56A4939A03E202F /* Info.plist */,
-				2F9A925691A941BE830067FF /* DynamicIsland.entitlements */,
-				A10000150000000000000015 /* Assets.xcassets */,
-				A10000160000000000000016 /* AppIcon.icns */,
-				649C58C343CF4C45BAA932A2 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
 		649C58C343CF4C45BAA932A2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CB31880C202F4CDC9C12C524 /* DynamicIsland.app */,
+				CB31880C202F4CDC9C12C524 /* NotchBay.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DB994C97CBB1416D9932E2C0 = {
+			isa = PBXGroup;
+			children = (
+				3F0CAB0B01F24093AD53F0CC /* DynamicIsland/AppDelegate.swift */,
+				E6510B8AB5E642CEA45426BE /* DynamicIsland/DynamicIslandApp.swift */,
+				170A6C833FC24B7A8C9D98F5 /* DynamicIsland/Models/MediaItem.swift */,
+				802FE31A1BF4402BAE75C37C /* DynamicIsland/Models/NetworkStats.swift */,
+				40922A2F7A7449E792F62D34 /* DynamicIsland/Models/SystemStats.swift */,
+				6DB596A4CA034CA2814F2F95 /* DynamicIsland/Models/TimerModel.swift */,
+				791E3178A0DF4281B714D310 /* DynamicIsland/Services/DropShelfService.swift */,
+				3EBA9E919CCA4AABA3204137 /* DynamicIsland/Services/MediaControllerService.swift */,
+				CAFFD61414F24CB4918F6D88 /* DynamicIsland/Services/NetworkMonitorService.swift */,
+				D1A4EC79AA2C406092917B68 /* DynamicIsland/Services/SystemMonitorService.swift */,
+				315658E10B364DEEBF349159 /* DynamicIsland/Views/CompactIslandView.swift */,
+				DF7C96A8350848D39E6F81C6 /* DynamicIsland/Views/Components/GlowingBadge.swift */,
+				ABC3483D808345EDB51EBDBE /* DynamicIsland/Views/Components/SparklineChart.swift */,
+				4C120664C16541708ADFC845 /* DynamicIsland/Views/ExpandedIslandView.swift */,
+				F4C52CECE51E4E7791D59126 /* DynamicIsland/Views/Home/HomeView.swift */,
+				5E7971E6082F4944BCC2398B /* DynamicIsland/Views/Media/NowPlayingView.swift */,
+				EA71FDAAE52B4D688D1E500F /* DynamicIsland/Views/NotchContainerView.swift */,
+				901B1448DFC8481783618EB3 /* DynamicIsland/Views/Shelf/DropShelfView.swift */,
+				FCB009893F3F442CABB0E2AD /* DynamicIsland/Views/System/MetricCardView.swift */,
+				EA82FF63F9DE4BB5B14ECD7F /* DynamicIsland/Views/System/NetworkDetailView.swift */,
+				C9FB03B982614690BD46524D /* DynamicIsland/Views/System/SystemDetailViews.swift */,
+				9590FF2ACB1B4A98943416D5 /* DynamicIsland/Views/System/SystemOverviewView.swift */,
+				D7F9746E0A154CA98135B62D /* DynamicIsland/Views/Timers/RulerSliderView.swift */,
+				64BE33C75AE84840BDAFF5DD /* DynamicIsland/Views/Timers/TimerDashboardView.swift */,
+				70672556C3EF496DA70FBEDE /* DynamicIsland/Window/InteractiveHostingView.swift */,
+				6C3B336507C549FB9BD591DF /* DynamicIsland/Window/NotchPanel.swift */,
+				2A91AF02EAF94993A1959F81 /* DynamicIsland/Window/NotchViewModel.swift */,
+				07AD76ABE04E4FB697AE0B24 /* DynamicIsland/Window/NotchWindowController.swift */,
+				A10000010000000000000001 /* DynamicIsland/Models/AgentModel.swift */,
+				A10000020000000000000002 /* DynamicIsland/Models/HUDEvent.swift */,
+				A10000030000000000000003 /* DynamicIsland/Services/AgentCompanionService.swift */,
+				A10000040000000000000004 /* DynamicIsland/Services/SystemHUDService.swift */,
+				A10000050000000000000005 /* DynamicIsland/Views/Agent/AgentDashboardView.swift */,
+				A10000060000000000000006 /* DynamicIsland/Views/HUD/IslandHUDView.swift */,
+				A10000070000000000000007 /* DynamicIsland/Services/AgentAutoDetectorService.swift */,
+				A10000080000000000000008 /* DynamicIsland/Views/Components/NotchSquircleShape.swift */,
+				A10000090000000000000009 /* DynamicIsland/Models/WeatherModel.swift */,
+				A10000100000000000000010 /* DynamicIsland/Models/CalendarModel.swift */,
+				A10000110000000000000011 /* DynamicIsland/Services/WeatherService.swift */,
+				A10000120000000000000012 /* DynamicIsland/Services/CalendarService.swift */,
+				A10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift */,
+				A10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift */,
+				CF0FF6B1B56A4939A03E202F /* DynamicIsland/Resources/Info.plist */,
+				2F9A925691A941BE830067FF /* DynamicIsland/Resources/DynamicIsland.entitlements */,
+				A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */,
+				A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */,
+				649C58C343CF4C45BAA932A2 /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -192,7 +192,7 @@
 			);
 			name = DynamicIsland;
 			productName = DynamicIsland;
-			productReference = CB31880C202F4CDC9C12C524 /* DynamicIsland.app */;
+			productReference = CB31880C202F4CDC9C12C524 /* NotchBay.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -228,8 +228,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B10000150000000000000015 /* Assets.xcassets in Resources */,
-				B10000160000000000000016 /* AppIcon.icns in Resources */,
+				B10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets in Resources */,
+				B10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,54 +240,106 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				15D782D985CB46BAB54ADFA9 /* AppDelegate.swift in Sources */,
-				5BDF1442302E46AEA7FD1BC3 /* DynamicIslandApp.swift in Sources */,
-				7A75142115FE449CA0CE2F3C /* MediaItem.swift in Sources */,
-				B4C4327303CE434EAB345253 /* NetworkStats.swift in Sources */,
-				9C885EC3346D49849C82617E /* SystemStats.swift in Sources */,
-				14C5B2A05257412BB1251760 /* TimerModel.swift in Sources */,
-				268BA9FB2CB149009A918125 /* DropShelfService.swift in Sources */,
-				3ABA9EE177DE4767BDF57A0F /* MediaControllerService.swift in Sources */,
-				2316DE8B202D4CD08240746F /* NetworkMonitorService.swift in Sources */,
-				143C4ACFC7ED403DBA47C59F /* SystemMonitorService.swift in Sources */,
-				9CA59F6C4AC54B9BB4E580A1 /* CompactIslandView.swift in Sources */,
-				AACBA05882954995990E28E5 /* GlowingBadge.swift in Sources */,
-				D493D43006A048FD87A8B5D0 /* SparklineChart.swift in Sources */,
-				185A3BBAACD9467C99A7DE70 /* ExpandedIslandView.swift in Sources */,
-				F5E24940E4864A43AFA514F2 /* HomeView.swift in Sources */,
-				A7F36165BF07440DB0E8C99F /* NowPlayingView.swift in Sources */,
-				10AAE29E9A3442109880A2D8 /* NotchContainerView.swift in Sources */,
-				06F6B9C6455749AE9DBC9979 /* DropShelfView.swift in Sources */,
-				F0BB47762B6B454DB9288684 /* MetricCardView.swift in Sources */,
-				ECE0A02662184E9E9AF70523 /* NetworkDetailView.swift in Sources */,
-				6F8884E4A3CD4EA7821E0C70 /* SystemDetailViews.swift in Sources */,
-				D964FB31CAA6437F8C61E81B /* SystemOverviewView.swift in Sources */,
-				9D97E72253524674B44D4C98 /* RulerSliderView.swift in Sources */,
-				601118EC2EB1429DBCCC9D73 /* TimerDashboardView.swift in Sources */,
-				CB1304842B1A480FAB91AA4B /* InteractiveHostingView.swift in Sources */,
-				A2E12BC99DDB40D5B84452F2 /* NotchPanel.swift in Sources */,
-				F06B1E728935446AA7DC993B /* NotchViewModel.swift in Sources */,
-				90DE265853914830A8E37E4D /* NotchWindowController.swift in Sources */,
-				B10000010000000000000001 /* AgentModel.swift in Sources */,
-				B10000020000000000000002 /* HUDEvent.swift in Sources */,
-				B10000030000000000000003 /* AgentCompanionService.swift in Sources */,
-				B10000040000000000000004 /* SystemHUDService.swift in Sources */,
-				B10000050000000000000005 /* AgentDashboardView.swift in Sources */,
-				B10000060000000000000006 /* IslandHUDView.swift in Sources */,
-				B10000070000000000000007 /* AgentAutoDetectorService.swift in Sources */,
-				B10000080000000000000008 /* NotchSquircleShape.swift in Sources */,
-				B10000090000000000000009 /* WeatherModel.swift in Sources */,
-				B10000100000000000000010 /* CalendarModel.swift in Sources */,
-				B10000110000000000000011 /* WeatherService.swift in Sources */,
-				B10000120000000000000012 /* CalendarService.swift in Sources */,
-				B10000130000000000000013 /* WeatherDashboardView.swift in Sources */,
-				B10000140000000000000014 /* CalendarDashboardView.swift in Sources */,
+				15D782D985CB46BAB54ADFA9 /* DynamicIsland/AppDelegate.swift in Sources */,
+				5BDF1442302E46AEA7FD1BC3 /* DynamicIsland/DynamicIslandApp.swift in Sources */,
+				7A75142115FE449CA0CE2F3C /* DynamicIsland/Models/MediaItem.swift in Sources */,
+				B4C4327303CE434EAB345253 /* DynamicIsland/Models/NetworkStats.swift in Sources */,
+				9C885EC3346D49849C82617E /* DynamicIsland/Models/SystemStats.swift in Sources */,
+				14C5B2A05257412BB1251760 /* DynamicIsland/Models/TimerModel.swift in Sources */,
+				268BA9FB2CB149009A918125 /* DynamicIsland/Services/DropShelfService.swift in Sources */,
+				3ABA9EE177DE4767BDF57A0F /* DynamicIsland/Services/MediaControllerService.swift in Sources */,
+				2316DE8B202D4CD08240746F /* DynamicIsland/Services/NetworkMonitorService.swift in Sources */,
+				143C4ACFC7ED403DBA47C59F /* DynamicIsland/Services/SystemMonitorService.swift in Sources */,
+				9CA59F6C4AC54B9BB4E580A1 /* DynamicIsland/Views/CompactIslandView.swift in Sources */,
+				AACBA05882954995990E28E5 /* DynamicIsland/Views/Components/GlowingBadge.swift in Sources */,
+				D493D43006A048FD87A8B5D0 /* DynamicIsland/Views/Components/SparklineChart.swift in Sources */,
+				185A3BBAACD9467C99A7DE70 /* DynamicIsland/Views/ExpandedIslandView.swift in Sources */,
+				F5E24940E4864A43AFA514F2 /* DynamicIsland/Views/Home/HomeView.swift in Sources */,
+				A7F36165BF07440DB0E8C99F /* DynamicIsland/Views/Media/NowPlayingView.swift in Sources */,
+				10AAE29E9A3442109880A2D8 /* DynamicIsland/Views/NotchContainerView.swift in Sources */,
+				06F6B9C6455749AE9DBC9979 /* DynamicIsland/Views/Shelf/DropShelfView.swift in Sources */,
+				F0BB47762B6B454DB9288684 /* DynamicIsland/Views/System/MetricCardView.swift in Sources */,
+				ECE0A02662184E9E9AF70523 /* DynamicIsland/Views/System/NetworkDetailView.swift in Sources */,
+				6F8884E4A3CD4EA7821E0C70 /* DynamicIsland/Views/System/SystemDetailViews.swift in Sources */,
+				D964FB31CAA6437F8C61E81B /* DynamicIsland/Views/System/SystemOverviewView.swift in Sources */,
+				9D97E72253524674B44D4C98 /* DynamicIsland/Views/Timers/RulerSliderView.swift in Sources */,
+				601118EC2EB1429DBCCC9D73 /* DynamicIsland/Views/Timers/TimerDashboardView.swift in Sources */,
+				CB1304842B1A480FAB91AA4B /* DynamicIsland/Window/InteractiveHostingView.swift in Sources */,
+				A2E12BC99DDB40D5B84452F2 /* DynamicIsland/Window/NotchPanel.swift in Sources */,
+				F06B1E728935446AA7DC993B /* DynamicIsland/Window/NotchViewModel.swift in Sources */,
+				90DE265853914830A8E37E4D /* DynamicIsland/Window/NotchWindowController.swift in Sources */,
+				B10000010000000000000001 /* DynamicIsland/Models/AgentModel.swift in Sources */,
+				B10000020000000000000002 /* DynamicIsland/Models/HUDEvent.swift in Sources */,
+				B10000030000000000000003 /* DynamicIsland/Services/AgentCompanionService.swift in Sources */,
+				B10000040000000000000004 /* DynamicIsland/Services/SystemHUDService.swift in Sources */,
+				B10000050000000000000005 /* DynamicIsland/Views/Agent/AgentDashboardView.swift in Sources */,
+				B10000060000000000000006 /* DynamicIsland/Views/HUD/IslandHUDView.swift in Sources */,
+				B10000070000000000000007 /* DynamicIsland/Services/AgentAutoDetectorService.swift in Sources */,
+				B10000080000000000000008 /* DynamicIsland/Views/Components/NotchSquircleShape.swift in Sources */,
+				B10000090000000000000009 /* DynamicIsland/Models/WeatherModel.swift in Sources */,
+				B10000100000000000000010 /* DynamicIsland/Models/CalendarModel.swift in Sources */,
+				B10000110000000000000011 /* DynamicIsland/Services/WeatherService.swift in Sources */,
+				B10000120000000000000012 /* DynamicIsland/Services/CalendarService.swift in Sources */,
+				B10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift in Sources */,
+				B10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		3355445990AD47B2978DF10B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = DynamicIsland/Resources/DynamicIsland.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DynamicIsland/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotchBay;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notchbay.mac;
+				PRODUCT_NAME = NotchBay;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		73E39E68FB4A4AB7AFB34091 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = DynamicIsland/Resources/DynamicIsland.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = DynamicIsland/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NotchBay;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.notchbay.mac;
+				PRODUCT_NAME = NotchBay;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
 		76332F95D7434248A7EB0189 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -296,18 +348,46 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -321,79 +401,48 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-			};
-			name = Release;
-		};
-		73E39E68FB4A4AB7AFB34091 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = DynamicIsland/Resources/DynamicIsland.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = DynamicIsland/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NotchBay;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.notchbay.mac;
-				PRODUCT_NAME = NotchBay;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		3355445990AD47B2978DF10B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = DynamicIsland/Resources/DynamicIsland.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = DynamicIsland/Resources/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = NotchBay;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.notchbay.mac;
-				PRODUCT_NAME = NotchBay;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AE25E86B37CC4323BFEED37C /* Build configuration list for PBXProject "DynamicIsland" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				76332F95D7434248A7EB0189 /* Debug */,
-				BF789FC04C3348F380481F3D /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		5E3362AD9FC946D495592816 /* Build configuration list for PBXNativeTarget "DynamicIsland" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -403,8 +452,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AE25E86B37CC4323BFEED37C /* Build configuration list for PBXProject "DynamicIsland" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76332F95D7434248A7EB0189 /* Debug */,
+				BF789FC04C3348F380481F3D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = EE246E43DB334C7B9C1B5420 /* Project object */;
 }
