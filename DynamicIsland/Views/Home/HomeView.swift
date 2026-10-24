@@ -414,7 +414,7 @@ public struct HomeView: View {
                 .foregroundColor(.white.opacity(0.5))
                 .lineLimit(1)
             
-            // Call Quick Controls or Active Call Indicator
+            // Active Live Call Indicator (only visible when a real call is ongoing)
             if let call = viewModel.callService.currentCall {
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
@@ -437,57 +437,9 @@ public struct HomeView: View {
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-            } else {
-                HStack(spacing: 3) {
-                    Menu {
-                        Button("Normal Phone Call (Sarah)") {
-                            viewModel.callService.startIncomingCall(category: .cellular, contactName: "Sarah Jenkins")
-                        }
-                        Button("FaceTime Video (Alex)") {
-                            viewModel.callService.startIncomingCall(category: .facetimeVideo, contactName: "Alex Rivera")
-                        }
-                    } label: {
-                        HStack(spacing: 2) {
-                            Image(systemName: "phone.fill")
-                                .font(.system(size: 7))
-                            Text("Normal")
-                                .font(.system(size: 7.5, weight: .bold, design: .rounded))
-                        }
-                        .foregroundColor(Color(red: 0.25, green: 0.85, blue: 0.45))
-                        .padding(.horizontal, 4.5)
-                        .padding(.vertical, 1.5)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Capsule())
-                    }
-                    .menuStyle(.borderlessButton)
-                    .help("Simulate Normal Phone Call")
-                    
-                    Menu {
-                        Button("WhatsApp Audio (David)") {
-                            viewModel.callService.startIncomingCall(category: .whatsAppAudio, contactName: "David Miller")
-                        }
-                        Button("WhatsApp Video (Emma)") {
-                            viewModel.callService.startIncomingCall(category: .whatsAppVideo, contactName: "Emma Watson")
-                        }
-                    } label: {
-                        HStack(spacing: 2) {
-                            Image(systemName: "phone.bubble.fill")
-                                .font(.system(size: 7))
-                            Text("WhatsApp")
-                                .font(.system(size: 7.5, weight: .bold, design: .rounded))
-                        }
-                        .foregroundColor(Color(red: 0.15, green: 0.82, blue: 0.40))
-                        .padding(.horizontal, 4.5)
-                        .padding(.vertical, 1.5)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Capsule())
-                    }
-                    .menuStyle(.borderlessButton)
-                    .help("Simulate WhatsApp Call")
-                }
             }
             
-            Spacer(minLength: 4)
+            Spacer(minLength: 8)
             
             // Event Item Preview or Clean Empty State
             if let event = nextEventItem {

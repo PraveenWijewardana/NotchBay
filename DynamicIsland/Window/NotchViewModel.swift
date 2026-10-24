@@ -220,10 +220,8 @@ public final class NotchViewModel: ObservableObject {
             guard let self = self else { return }
             if let call = session {
                 if call.status == .incoming || call.status == .active {
-                    if self.state != .expanded {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            self.state = .call
-                        }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        self.state = .call
                     }
                 } else if call.status == .ended {
                     // Stay in .call for 1.2s to display "Call Ended", then collapse
