@@ -318,19 +318,8 @@ public final class SystemHUDService: ObservableObject {
     // MARK: - Track Change Monitoring
     public func evaluateTrackChange(_ track: MediaTrack) {
         guard track.isPlaying, !track.title.isEmpty, track.title != "No Media Playing" else { return }
-        
-        if track.title != previousTrackTitle {
-            previousTrackTitle = track.title
-            let alert = HUDAlert(
-                type: .track(title: track.title, artist: track.artist),
-                title: track.title,
-                subtitle: track.artist.isEmpty ? track.sourceAppName : track.artist,
-                icon: "music.note",
-                progress: nil,
-                duration: 3.0
-            )
-            triggerAlert(alert)
-        }
+        // Keep music inside compact island ears; do not pop down an oversized HUD banner over the notch
+        previousTrackTitle = track.title
     }
     
     private func triggerAlert(_ alert: HUDAlert) {

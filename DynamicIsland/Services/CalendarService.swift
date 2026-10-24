@@ -96,7 +96,7 @@ public final class CalendarService: ObservableObject {
             startDate: startDate,
             endDate: endDate,
             isAllDay: false,
-            calendarTitle: "Dynamic Island",
+            calendarTitle: "NotchBay",
             colorHex: colorHex,
             location: location?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false ? location : nil
         )

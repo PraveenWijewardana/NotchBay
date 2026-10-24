@@ -115,16 +115,16 @@ public struct NotchContainerView: View {
         
         if viewModel.isHovering && viewModel.state == .compact {
             return LinearGradient(
-                colors: [Color.cyan.opacity(0.4), Color.purple.opacity(0.4), Color.white.opacity(0.3)],
+                colors: [Color.cyan.opacity(0.4), Color.purple.opacity(0.4), Color.cyan.opacity(0.4)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
         }
         
         return LinearGradient(
-            colors: [Color.white.opacity(0.04), Color.white.opacity(0.12), Color.white.opacity(0.16)],
-            startPoint: .leading,
-            endPoint: .trailing
+            colors: [Color.white.opacity(0.08), Color.white.opacity(0.14)],
+            startPoint: .top,
+            endPoint: .bottom
         )
     }
     

@@ -14,7 +14,19 @@ public struct HomeView: View {
         self.calendarService = viewModel.calendarService
     }
     
-    // MARK: - Calendar Formatted Properties
+    // MARK: - Clock & Calendar Formatted Properties
+    private var formattedTime: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm"
+        return formatter.string(from: viewModel.currentDate)
+    }
+    
+    private var formattedAmPm: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "a"
+        return formatter.string(from: viewModel.currentDate)
+    }
+    
     private var formattedHeaderDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE, d MMM"
@@ -248,20 +260,39 @@ public struct HomeView: View {
         )
     }
     
-    // MARK: - Column 2: Calendar / Agenda
+    // MARK: - Column 2: Clock & Agenda (Center Column)
     private var calendarColumn: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            // Date Header: "Fri, 3 Apr"
+        VStack(alignment: .leading, spacing: 2) {
+            // Live Digital Time (Center of Home) - Tapping jumps to Timers & Clock
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                    viewModel.selectedPageIndex = 2 // Jump to Timers & Clock
+                }
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(formattedTime)
+                        .font(.system(size: 19, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Text(formattedAmPm)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            .buttonStyle(.plain)
+            .help("Open Clock & Timers")
+            
+            // Date Header: "Sat, 24 Oct"
             Text(formattedHeaderDate)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.85))
             
             // Subtitle
             Text(eventCount == 0 ? "No events today" : "\(eventCount) event\(eventCount == 1 ? "" : "s") coming up")
-                .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.6))
+                .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.5))
             
-            Spacer(minLength: 12)
+            Spacer(minLength: 8)
             
             // Event Item Preview or Clean Empty State
             if let event = nextEventItem {

@@ -108,6 +108,27 @@ public struct CompactIslandView: View {
                 Text("Approve")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
                     .foregroundColor(.yellow)
+            } else if viewModel.agentService.status == .executing || viewModel.agentService.status == .coding {
+                Image(systemName: viewModel.agentService.selectedAgent.iconName)
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+                Text("Working")
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+            } else if viewModel.agentService.status == .thinking {
+                Image(systemName: "brain")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundColor(.cyan)
+                Text("Thinking")
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.cyan)
+            } else if viewModel.agentService.status == .completed {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundColor(.green)
+                Text("Done")
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.green)
             } else if viewModel.timerConfig.isRunning {
                 Image(systemName: "timer")
                     .font(.system(size: 8, weight: .bold))

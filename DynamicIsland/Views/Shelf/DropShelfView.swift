@@ -135,6 +135,31 @@ public struct DropShelfView: View {
             .help("Paste from clipboard (⌘V)")
             .fixedSize()
             
+            // AirDrop Capsule Button
+            Button {
+                if !shelfService.items.isEmpty {
+                    shelfService.airDropAll()
+                } else {
+                    shelfService.airDropClipboard()
+                }
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: "airdrop")
+                        .font(.system(size: 9.5, weight: .semibold))
+                    Text("AirDrop")
+                        .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                        .lineLimit(1)
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3.5)
+                .background(Color.blue.opacity(0.85))
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .help("Send vault items or clipboard via AirDrop")
+            .fixedSize()
+            
             // Clear All Button
             if !shelfService.items.isEmpty {
                 Button {
@@ -300,6 +325,20 @@ public struct DropShelfView: View {
                     .buttonStyle(.plain)
                     .help(item.path != nil ? "Reveal in Finder" : "Open")
                     
+                    // AirDrop button
+                    Button {
+                        shelfService.airDropItem(id: item.id)
+                    } label: {
+                        Image(systemName: "airdrop")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(3.5)
+                            .background(Color.blue.opacity(0.8))
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Share via AirDrop")
+                    
                     // Remove button
                     Button {
                         shelfService.removeItem(id: item.id)
@@ -343,6 +382,12 @@ public struct DropShelfView: View {
                 shelfService.copyItemToClipboard(id: item.id)
             } label: {
                 Label("Copy to Clipboard", systemImage: "doc.on.doc")
+            }
+            
+            Button {
+                shelfService.airDropItem(id: item.id)
+            } label: {
+                Label("Share via AirDrop...", systemImage: "airdrop")
             }
             
             if item.path != nil {

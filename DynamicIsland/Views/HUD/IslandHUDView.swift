@@ -24,7 +24,7 @@ public struct IslandHUDView: View {
             .frame(width: 115, alignment: .leading)
             .padding(.leading, 12)
             
-            Spacer(minLength: 145) // Hardware camera notch cutout area
+            Spacer(minLength: max(180, viewModel.physicalNotchWidth + 8)) // Hardware camera notch cutout clearance
             
             // Right Ear: Progress Level, Subtitle, or Interactive Action Buttons (Approve / Deny)
             Group {

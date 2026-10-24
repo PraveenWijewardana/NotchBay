@@ -146,7 +146,7 @@ public final class NotchWindowController: NSObject, ObservableObject {
             height = 270
         case .hud:
             width = 390
-            height = 44
+            height = notchHeight
         case .compact:
             // Symmetrical compact ears: 44pt content + 6pt padding on each side of the physical notch
             let earTotal: CGFloat = 50.0

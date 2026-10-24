@@ -9,76 +9,40 @@ public struct ExpandedIslandView: View {
         self.viewModel = viewModel
     }
     
-    // MARK: - Clock Formatted Properties
-    private var timeHourMinute: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm"
-        return formatter.string(from: viewModel.currentDate)
-    }
-    
-    private var timeAmPm: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "a"
-        return formatter.string(from: viewModel.currentDate)
-    }
-    
-    private var batteryIconName: String {
-        let pct = viewModel.systemService.powerMetrics.batteryLevel
-        if pct > 80 { return "battery.100" }
-        if pct > 50 { return "battery.75" }
-        if pct > 25 { return "battery.50" }
-        return "battery.25"
-    }
+
     
     public var body: some View {
         VStack(spacing: 8) {
-            // MARK: - Top Bar (Full Navigation on Left, Notch Clearance in Center, Clock & Utilities on Right)
+            // MARK: - Top Bar (Navigation on Left & Right Ears, Notch Clearance in Center)
             HStack(alignment: .center) {
-                // Left Ear: All 8 Dynamic Island Navigation Tabs (Smooth Scrollable Capsule)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 4) {
-                        topTabButton(index: 0, icon: "house.fill", title: "Home")
-                        topTabButton(index: 1, icon: "gauge.with.needle.fill", title: "System")
-                        topTabButton(index: 2, icon: "timer", title: "Timers & Stopwatch")
-                        topTabButton(index: 3, icon: "music.note", title: "Now Playing")
-                        topTabButton(index: 4, icon: "tray.fill", title: "Drop Shelf")
-                        topTabButton(index: 5, icon: "sparkles", title: "Code Agents")
-                        topTabButton(index: 6, icon: "calendar", title: "Calendar")
-                        topTabButton(index: 7, icon: "cloud.sun.fill", title: "Weather")
-                    }
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 3.5)
+                // Left Ear: Primary Navigation Tabs (Home, System, Timers, Music, Shelf, Weather)
+                HStack(spacing: 4) {
+                    topTabButton(index: 0, icon: "house.fill", title: "Home")
+                    topTabButton(index: 1, icon: "gauge.with.needle.fill", title: "System")
+                    topTabButton(index: 2, icon: "timer", title: "Timers & Stopwatch")
+                    topTabButton(index: 3, icon: "music.note", title: "Now Playing")
+                    topTabButton(index: 4, icon: "tray.fill", title: "Drop Shelf")
+                    topTabButton(index: 7, icon: "cloud.sun.fill", title: "Weather")
                 }
+                .padding(.horizontal, 5)
+                .padding(.vertical, 3.5)
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())
-                .frame(maxWidth: 215)
                 
-                Spacer(minLength: max(130, viewModel.physicalNotchWidth - 30))
+                Spacer(minLength: max(90, viewModel.physicalNotchWidth - 40))
                 
-                // Right Ear: Live Clock + 4 Utility Buttons (Lock, Battery, Bell, Settings)
-                HStack(spacing: 7) {
-                    // Live Digital Clock Button (jumps to Timers / Clock page)
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            viewModel.selectedPageIndex = 2 // Timers / Clock
-                        }
-                    } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: 2) {
-                            Text(timeHourMinute)
-                                .font(.system(size: 11.5, weight: .bold, design: .rounded))
-                                .monospacedDigit()
-                                .foregroundColor(.white)
-                            Text(timeAmPm)
-                                .font(.system(size: 8, weight: .bold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3.5)
-                        .background(Color.white.opacity(0.06))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .help("Open Clock & Timers")
+                // Right Ear: AI & Calendar Tabs + Utility Buttons (Lock, Bell, Settings)
+                HStack(spacing: 5) {
+                    // AI / Code Agents (index 5)
+                    topTabButton(index: 5, icon: "sparkles", title: "Code Agents (AI)")
+                    
+                    // Calendar (index 6)
+                    topTabButton(index: 6, icon: "calendar", title: "Calendar")
+                    
+                    Rectangle()
+                        .fill(Color.white.opacity(0.18))
+                        .frame(width: 1, height: 14)
+                        .padding(.horizontal, 1)
                     
                     // Lock Screen Button (Instant SACLockScreenImmediate)
                     Button {
@@ -92,21 +56,6 @@ public struct ExpandedIslandView: View {
                     }
                     .buttonStyle(.plain)
                     .help("Lock Screen (Instant)")
-                    
-                    // Battery Overview Button
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            viewModel.selectedPageIndex = 1 // System & Power
-                        }
-                    } label: {
-                        Image(systemName: batteryIconName)
-                            .font(.system(size: 12.5, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 22, height: 22)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .help("Battery & Power Metrics (\(viewModel.systemService.powerMetrics.batteryLevel)%)")
                     
                     // Notification / Bell Button
                     Button {
@@ -138,7 +87,7 @@ public struct ExpandedIslandView: View {
                     .buttonStyle(.plain)
                     .help("Collapse to Notch")
                 }
-                .padding(.horizontal, 7)
+                .padding(.horizontal, 6)
                 .padding(.vertical, 3.5)
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())

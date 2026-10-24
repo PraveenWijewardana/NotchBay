@@ -300,6 +300,88 @@ public final class DropShelfService: ObservableObject {
         showToast("Shelf cleared")
     }
     
+    // MARK: - AirDrop Sharing Methods
+    public func airDropItem(id: UUID) {
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        let shareItems = prepareShareItems(for: item)
+        guard !shareItems.isEmpty else {
+            showToast("Item cannot be shared")
+            return
+        }
+        performAirDrop(with: shareItems, description: item.name)
+    }
+    
+    public func airDropAll() {
+        guard !items.isEmpty else { return }
+        var allShareItems: [Any] = []
+        for item in items {
+            allShareItems.append(contentsOf: prepareShareItems(for: item))
+        }
+        guard !allShareItems.isEmpty else { return }
+        performAirDrop(with: allShareItems, description: "\(allShareItems.count) items")
+    }
+    
+    public func airDropClipboard() {
+        let pasteboard = NSPasteboard.general
+        var shareItems: [Any] = []
+        
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL], !urls.isEmpty {
+            shareItems.append(contentsOf: urls)
+        } else if let image = NSImage(pasteboard: pasteboard),
+                  let tiffData = image.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiffData),
+                  let pngData = bitmap.representation(using: .png, properties: [:]) {
+            let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("Clipboard_Image_\(Int(Date().timeIntervalSince1970)).png")
+            try? pngData.write(to: tempURL)
+            shareItems.append(tempURL)
+        } else if let text = pasteboard.string(forType: .string), !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            shareItems.append(text as NSString)
+        }
+        
+        guard !shareItems.isEmpty else {
+            showToast("Clipboard is empty")
+            return
+        }
+        
+        performAirDrop(with: shareItems, description: "Clipboard")
+    }
+    
+    private func prepareShareItems(for item: ShelfItem) -> [Any] {
+        if let path = item.path {
+            return [path]
+        } else if let imgData = item.imageData {
+            let filename = item.name.isEmpty ? "Image_\(Int(Date().timeIntervalSince1970)).png" : item.name
+            let safeFilename = filename.hasSuffix(".png") || filename.hasSuffix(".jpg") || filename.hasSuffix(".jpeg") ? filename : "\(filename).png"
+            let tempURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(safeFilename)
+            if (try? imgData.write(to: tempURL)) != nil {
+                return [tempURL]
+            } else if let img = NSImage(data: imgData) {
+                return [img]
+            }
+        } else if item.itemType == .link, let stringContent = item.stringContent, let url = URL(string: stringContent) {
+            return [url]
+        } else if let hex = item.colorHex {
+            return [hex as NSString]
+        } else if let text = item.stringContent {
+            return [text as NSString]
+        }
+        return []
+    }
+    
+    private func performAirDrop(with shareItems: [Any], description: String) {
+        if let airDropService = NSSharingService(named: .sendViaAirDrop), airDropService.canPerform(withItems: shareItems) {
+            airDropService.perform(withItems: shareItems)
+            showToast("Opening AirDrop...")
+        } else {
+            let picker = NSSharingServicePicker(items: shareItems)
+            if let window = NSApplication.shared.windows.first(where: { $0.isVisible }), let contentView = window.contentView {
+                picker.show(relativeTo: contentView.bounds, of: contentView, preferredEdge: .minY)
+            } else {
+                showToast("AirDrop unavailable")
+            }
+        }
+    }
+    
     private func showToast(_ msg: String) {
         toastMessage = msg
         toastTask?.cancel()
