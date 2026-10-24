@@ -24,14 +24,16 @@ public final class AgentAutoDetectorService: ObservableObject {
     private var lastBrainFolderUrl: URL?
     private var lastTranscriptModDate: Date?
     
+    private var lastBrainFolderModDate: Date?
+    
     public init(companion: AgentCompanionService) {
         self.companion = companion
     }
     
     public func start() {
         stop()
-        // Poll every 1.5 seconds for instant response with <0.1% CPU overhead
-        monitorTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+        // Poll every 2.5 seconds with low overhead
+        monitorTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.performMonitoringTick()
             }
@@ -58,6 +60,23 @@ public final class AgentAutoDetectorService: ObservableObject {
         let brainUrl = homeDir.appendingPathComponent(".gemini/antigravity/brain")
         guard FileManager.default.fileExists(atPath: brainUrl.path) else { return false }
         
+        let brainAttrs = try? FileManager.default.attributesOfItem(atPath: brainUrl.path)
+        let brainModDate = brainAttrs?[.modificationDate] as? Date
+        
+        if let brainModDate = brainModDate, let lastBrainMod = lastBrainFolderModDate, brainModDate <= lastBrainMod, let cachedConv = lastBrainFolderUrl {
+            let transcriptUrl = cachedConv.appendingPathComponent(".system_generated/logs/transcript.jsonl")
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: transcriptUrl.path),
+               let modDate = attrs[.modificationDate] as? Date {
+                if lastTranscriptModDate == nil || modDate > lastTranscriptModDate! {
+                    lastTranscriptModDate = modDate
+                    parseTranscriptTail(url: transcriptUrl)
+                    return true
+                }
+            }
+            return true
+        }
+        lastBrainFolderModDate = brainModDate
+        
         // Find most recently modified conversation folder
         guard let conversations = try? FileManager.default.contentsOfDirectory(
             at: brainUrl,
@@ -72,6 +91,7 @@ public final class AgentAutoDetectorService: ObservableObject {
         }.sorted { $0.1 > $1.1 }
         
         guard let (latestConvUrl, _) = sorted.first else { return false }
+        lastBrainFolderUrl = latestConvUrl
         
         let transcriptUrl = latestConvUrl.appendingPathComponent(".system_generated/logs/transcript.jsonl")
         guard FileManager.default.fileExists(atPath: transcriptUrl.path) else { return false }

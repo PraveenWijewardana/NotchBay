@@ -26,11 +26,14 @@ public final class SystemMonitorService: ObservableObject {
         startMonitoring()
     }
     
+    private var tickCount: Int = 0
+    public var isDetailedMonitoringActive: Bool = false
+    
     public func startMonitoring(interval: TimeInterval = 1.0) {
         timer?.invalidate()
         let t = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.refreshAll()
+                self?.performMonitoringTick()
             }
         }
         RunLoop.main.add(t, forMode: .common)
@@ -40,6 +43,26 @@ public final class SystemMonitorService: ObservableObject {
     public func stopMonitoring() {
         timer?.invalidate()
         timer = nil
+    }
+    
+    private func performMonitoringTick() {
+        tickCount += 1
+        // CPU load is required for the compact island pill
+        updateCPU()
+        
+        if isDetailedMonitoringActive {
+            // User is actively looking at the system dashboard - update real-time
+            updateMemory()
+            updateDiskIO()
+            updateGPU()
+            if tickCount % 5 == 0 { updatePower() }
+            if tickCount % 30 == 0 { updateStorage() }
+        } else {
+            // In compact background mode, stagger checks to save CPU & battery
+            if tickCount % 4 == 0 { updateMemory() }
+            if tickCount % 10 == 0 { updatePower() }
+            if tickCount % 60 == 0 { updateStorage() }
+        }
     }
     
     public func refreshAll() {

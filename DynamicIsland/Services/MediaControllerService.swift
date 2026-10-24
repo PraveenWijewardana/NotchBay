@@ -15,8 +15,6 @@ public final class MediaControllerService: ObservableObject {
     
     public init() {
         setupNotificationObservers()
-        startVisualizer()
-        startPlaybackTicker()
         syncPlayerStateFromActiveApp()
     }
     
@@ -134,10 +132,20 @@ public final class MediaControllerService: ObservableObject {
         duration: Double
     ) {
         let trackChanged = (title != currentTrack.title || artist != currentTrack.artist)
-        
+        let wasPlaying = currentTrack.isPlaying
         currentTrack.isPlaying = isPlaying
         currentTrack.sourceAppName = source
         currentTrack.duration = duration
+        
+        if isPlaying != wasPlaying {
+            if isPlaying {
+                startVisualizer()
+                startPlaybackTicker()
+            } else {
+                stopVisualizer()
+                stopPlaybackTicker()
+            }
+        }
         
         // Smooth position syncing: only snap if drifting by more than 1.5 seconds
         if trackChanged || abs(currentTrack.currentPosition - position) > 1.5 {
@@ -486,29 +494,41 @@ public final class MediaControllerService: ObservableObject {
                     if self.currentTrack.currentPosition < self.currentTrack.duration {
                         self.currentTrack.currentPosition += 1.0
                     }
+                } else {
+                    self.stopPlaybackTicker()
                 }
-                // Continuously verify and sync real player state from Spotify / Music
-                self.syncPlayerStateFromActiveApp()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
         playbackTickerTimer = timer
     }
     
+    private func stopPlaybackTicker() {
+        playbackTickerTimer?.invalidate()
+        playbackTickerTimer = nil
+    }
+    
     private func startVisualizer() {
         visualizerTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.12, repeats: true) { [weak self] _ in
+        guard currentTrack.isPlaying else { return }
+        let timer = Timer(timeInterval: 0.15, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 if self.currentTrack.isPlaying {
                     self.audioFrequencies = (0..<5).map { _ in CGFloat.random(in: 0.25...1.0) }
                 } else {
-                    self.audioFrequencies = [0.15, 0.15, 0.15, 0.15, 0.15]
+                    self.stopVisualizer()
                 }
             }
         }
         RunLoop.main.add(timer, forMode: .common)
         visualizerTimer = timer
+    }
+    
+    private func stopVisualizer() {
+        visualizerTimer?.invalidate()
+        visualizerTimer = nil
+        self.audioFrequencies = [0.15, 0.15, 0.15, 0.15, 0.15]
     }
     
     public func openSourceApp() {

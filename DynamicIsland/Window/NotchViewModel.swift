@@ -23,8 +23,16 @@ public enum SystemDetailBlock: String, Identifiable, Sendable {
 
 @MainActor
 public final class NotchViewModel: ObservableObject {
-    @Published public var state: IslandPresentationState = .compact
-    @Published public var selectedPageIndex: Int = 0 // Home Page by default!
+    @Published public var state: IslandPresentationState = .compact {
+        didSet {
+            handleStateTransition(from: oldValue, to: state)
+        }
+    }
+    @Published public var selectedPageIndex: Int = 0 {
+        didSet {
+            systemService.isDetailedMonitoringActive = (state == .expanded && selectedPageIndex == 1)
+        }
+    }
     @Published public var systemDetailMode: SystemDetailBlock? = nil
     @Published public var isHovering: Bool = false
     
@@ -75,7 +83,21 @@ public final class NotchViewModel: ObservableObject {
     
     public init() {
         setupSubscribers()
-        startClockTimer()
+        if state == .expanded {
+            startClockTimer()
+        }
+    }
+    
+    private func handleStateTransition(from oldState: IslandPresentationState, to newState: IslandPresentationState) {
+        if newState == .expanded {
+            currentDate = Date()
+            startClockTimer()
+            systemService.isDetailedMonitoringActive = (selectedPageIndex == 1)
+            systemService.refreshAll()
+        } else {
+            stopClockTimer()
+            systemService.isDetailedMonitoringActive = false
+        }
     }
     
     private func startClockTimer() {
@@ -87,6 +109,11 @@ public final class NotchViewModel: ObservableObject {
         }
         RunLoop.main.add(timer, forMode: .common)
         clockTimer = timer
+    }
+    
+    private func stopClockTimer() {
+        clockTimer?.invalidate()
+        clockTimer = nil
     }
     
     private func setupSubscribers() {
@@ -136,13 +163,6 @@ public final class NotchViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 self.hudService.evaluateBatteryMetrics(self.systemService.powerMetrics)
-                self.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-            
-        networkService.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
             
@@ -150,13 +170,6 @@ public final class NotchViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 self.hudService.evaluateTrackChange(self.mediaService.currentTrack)
-                self.objectWillChange.send()
-            }
-            .store(in: &cancellables)
-            
-        shelfService.objectWillChange
-            .sink { [weak self] _ in
-                self?.objectWillChange.send()
             }
             .store(in: &cancellables)
     }
