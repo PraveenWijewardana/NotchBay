@@ -141,7 +141,7 @@ public final class CalendarService: ObservableObject {
     public func checkAndFetchEvents() {
         let status = EKEventStore.authorizationStatus(for: .event)
         if #available(macOS 14.0, *) {
-            if status == .fullAccess || status == .authorized {
+            if status == .fullAccess {
                 self.hasPermission = true
                 self.fetchEvents()
             } else if status == .notDetermined {

@@ -202,8 +202,8 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastSwiftUpdateCheck = 2710;
+				LastUpgradeCheck = 2710;
 			};
 			buildConfigurationList = AE25E86B37CC4323BFEED37C /* Build configuration list for PBXProject "DynamicIsland" */;
 			compatibilityVersion = "Xcode 14.0";

@@ -129,7 +129,7 @@ public struct WeatherDashboardView: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundColor(.white)
-                    .onChange(of: weatherService.searchQuery) { query in
+                    .onChange(of: weatherService.searchQuery) { _, query in
                         Task {
                             await weatherService.searchLocations(query: query)
                         }
