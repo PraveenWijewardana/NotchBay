@@ -64,6 +64,15 @@ public final class NotchViewModel: ObservableObject {
         return 179.0
     }
     
+    public var physicalNotchHeight: CGFloat {
+        let screen = NSScreen.screens.first(where: { $0.safeAreaInsets.top > 0 }) ?? NSScreen.main ?? NSScreen.screens.first ?? NSScreen()
+        return screen.safeAreaInsets.top > 0 ? screen.safeAreaInsets.top : 32.0
+    }
+    
+    public var compactHeight: CGFloat {
+        max(physicalNotchHeight + 4.0, 36.0)
+    }
+    
     public init() {
         setupSubscribers()
         startClockTimer()

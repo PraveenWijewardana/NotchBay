@@ -6,8 +6,8 @@ public struct CompactIslandView: View {
     @ObservedObject private var networkService: NetworkMonitorService
     @ObservedObject private var mediaService: MediaControllerService
     
-    // Each ear has a fixed 44pt content width + 6pt padding for exact symmetry
-    private let earWidth: CGFloat = 44.0
+    // Symmetrical ear content width with generous breathing room
+    private let earWidth: CGFloat = 50.0
     
     public init(viewModel: NotchViewModel) {
         self.viewModel = viewModel
@@ -16,23 +16,36 @@ public struct CompactIslandView: View {
         self.mediaService = viewModel.mediaService
     }
     
+    private var cpuColor: Color {
+        let usage = systemService.cpuMetrics.usagePercentage
+        if usage > 70 { return Color(red: 1.0, green: 0.35, blue: 0.35) }
+        if usage > 30 { return Color(red: 1.0, green: 0.8, blue: 0.2) }
+        return Color(red: 0.2, green: 0.85, blue: 0.95)
+    }
+    
     public var body: some View {
         HStack(spacing: 0) {
             // Left Ear: CPU Load or Animated Music Equalizer
             leftEarView
                 .frame(width: earWidth, alignment: .leading)
-                .padding(.leading, 6)
+                .padding(.leading, 10)
             
-            // Center Notch Bridge (matches physical hardware notch width with 100% mathematical center)
+            // Center Notch Bridge (matches physical hardware notch width with exact mathematical center)
             ZStack {
                 Color.clear
                     .frame(width: viewModel.physicalNotchWidth)
                 
                 if viewModel.isHovering {
-                    Image(systemName: "chevron.compact.down")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white.opacity(0.85))
-                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                    ZStack {
+                        Capsule()
+                            .fill(Color.white.opacity(0.14))
+                            .frame(width: 22, height: 12)
+                        
+                        Image(systemName: "chevron.compact.down")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.85)))
                 }
             }
             .frame(width: viewModel.physicalNotchWidth)
@@ -40,9 +53,9 @@ public struct CompactIslandView: View {
             // Right Ear: Symmetrically sized to earWidth, pinned to outer right
             rightEarView
                 .frame(width: earWidth, alignment: .trailing)
-                .padding(.trailing, 6)
+                .padding(.trailing, 10)
         }
-        .frame(height: 32)
+        .frame(height: viewModel.compactHeight)
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL, .text, .image], isTargeted: nil) { _ in
             withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
@@ -61,33 +74,44 @@ public struct CompactIslandView: View {
     // MARK: - Left Ear Content (Music Artwork/Equalizer or CPU Load)
     @ViewBuilder
     private var leftEarView: some View {
-        HStack(spacing: 3.5) {
-            if viewModel.mediaService.currentTrack.isPlaying {
-                if let data = viewModel.mediaService.currentTrack.artworkData,
+        HStack(spacing: 4) {
+            if mediaService.currentTrack.isPlaying {
+                if let data = mediaService.currentTrack.artworkData,
                    let nsImage = NSImage(data: data) {
                     Image(nsImage: nsImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 13, height: 13)
-                        .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                        .frame(width: 15, height: 15)
+                        .clipShape(RoundedRectangle(cornerRadius: 3.5, style: .continuous))
+                        .shadow(color: .purple.opacity(0.3), radius: 2)
+                } else {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 3.5, style: .continuous)
+                            .fill(LinearGradient(colors: [.purple, .indigo], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 15, height: 15)
+                        Image(systemName: "music.note")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white)
+                    }
                 }
                 
                 HStack(alignment: .bottom, spacing: 1.5) {
                     ForEach(0..<3, id: \.self) { i in
                         RoundedRectangle(cornerRadius: 1)
                             .fill(LinearGradient(colors: [.purple, .pink], startPoint: .top, endPoint: .bottom))
-                            .frame(width: 1.8, height: max(2.5, viewModel.mediaService.audioFrequencies[i] * 10))
+                            .frame(width: 2.0, height: max(3.0, mediaService.audioFrequencies[i] * 12))
                     }
                 }
-                .frame(height: 11)
+                .frame(height: 12)
             } else {
                 Image(systemName: "cpu")
-                    .font(.system(size: 8.5, weight: .bold))
-                    .foregroundColor(viewModel.isHovering ? .white : .cyan)
-                    .shadow(color: .cyan.opacity(viewModel.isHovering ? 0.8 : 0.0), radius: 3)
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(cpuColor)
+                    .shadow(color: cpuColor.opacity(viewModel.isHovering ? 0.7 : 0.25), radius: 2.5)
                 
-                Text(String(format: "%.0f%%", viewModel.systemService.cpuMetrics.usagePercentage))
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                Text(String(format: "%.0f%%", systemService.cpuMetrics.usagePercentage))
+                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                    .monospacedDigit()
                     .foregroundColor(.white)
                     .lineLimit(1)
             }
@@ -99,43 +123,46 @@ public struct CompactIslandView: View {
     // MARK: - Right Ear Content (Agent Status, Timer, or Network Speed)
     @ViewBuilder
     private var rightEarView: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 3.5) {
             if viewModel.agentService.status == .awaitingPermission {
                 Image(systemName: "exclamationmark.shield.fill")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundColor(.yellow)
                     .shadow(color: .yellow.opacity(0.8), radius: 3)
                 Text("Approve")
-                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(.yellow)
             } else if viewModel.agentService.status == .executing || viewModel.agentService.status == .coding {
                 Image(systemName: viewModel.agentService.selectedAgent.iconName)
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+                    .shadow(color: viewModel.agentService.selectedAgent.accentColor.opacity(0.6), radius: 2)
                 Text("Working")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
                     .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
             } else if viewModel.agentService.status == .thinking {
                 Image(systemName: "brain")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundColor(.cyan)
+                    .shadow(color: .cyan.opacity(0.6), radius: 2)
                 Text("Thinking")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
                     .foregroundColor(.cyan)
             } else if viewModel.agentService.status == .completed {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 8.5, weight: .bold))
+                    .font(.system(size: 9, weight: .bold))
                     .foregroundColor(.green)
+                    .shadow(color: .green.opacity(0.6), radius: 2)
                 Text("Done")
-                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(.green)
             } else if viewModel.timerConfig.isRunning {
                 Image(systemName: "timer")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: 8.5, weight: .bold))
                     .foregroundColor(.yellow)
-                    .shadow(color: .yellow.opacity(viewModel.isHovering ? 0.8 : 0.0), radius: 3)
+                    .shadow(color: .yellow.opacity(viewModel.isHovering ? 0.8 : 0.3), radius: 2.5)
                 Text(viewModel.timerConfig.formattedTime)
-                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundColor(.yellow)
             } else {
@@ -144,13 +171,16 @@ public struct CompactIslandView: View {
                 let isUpload = up > down && up >= 1024
                 let activeSpeed = isUpload ? up : down
                 let icon = isUpload ? "arrow.up" : "arrow.down"
-                let iconColor = isUpload ? Color.teal : (viewModel.isHovering ? Color.cyan : Color.blue)
+                let iconColor = isUpload ? Color(red: 0.3, green: 0.9, blue: 0.5) : Color(red: 0.2, green: 0.85, blue: 0.95)
                 
                 Image(systemName: icon)
-                    .font(.system(size: 7.5, weight: .bold))
+                    .font(.system(size: 8, weight: .bold))
                     .foregroundColor(iconColor)
+                    .shadow(color: iconColor.opacity(0.4), radius: 2)
+                
                 Text(NetworkMetrics.formatSpeed(activeSpeed))
-                    .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .monospacedDigit()
                     .foregroundColor(.white)
                     .lineLimit(1)
             }

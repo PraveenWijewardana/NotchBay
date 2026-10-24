@@ -160,28 +160,23 @@ public struct AgentDashboardView: View {
                         }
                     } else {
                         // Normal Agent Status Card
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: 6) {
                             Text(agentService.currentMessage)
                                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
-                                .lineLimit(2)
+                                .lineLimit(3)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
                             Spacer()
                             
-                            // Interactive Simulation Bar (Test Antigravity / Claude / Copilot right now)
-                            HStack(spacing: 6) {
-                                testPill(title: "Working", icon: "brain") {
-                                    agentService.simulateWorking(agent: agentService.selectedAgent)
-                                }
+                            HStack(spacing: 5) {
+                                Circle()
+                                    .fill(agentService.status == .idle ? Color.secondary : agentService.status.color)
+                                    .frame(width: 6, height: 6)
                                 
-                                testPill(title: "Permission", icon: "shield") {
-                                    agentService.simulatePermission(agent: agentService.selectedAgent)
-                                }
-                                
-                                testPill(title: "Done", icon: "checkmark") {
-                                    agentService.simulateCompletion(agent: agentService.selectedAgent)
-                                }
+                                Text(agentService.status == .idle ? "Listening for agent activity" : "Live session active")
+                                    .font(.system(size: 9.5, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.6))
                             }
                         }
                     }
@@ -251,22 +246,7 @@ public struct AgentDashboardView: View {
         }
     }
     
-    private func testPill(title: String, icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 3) {
-                Image(systemName: icon)
-                    .font(.system(size: 8.5))
-                Text(title)
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-            }
-            .foregroundColor(.white.opacity(0.85))
-            .padding(.horizontal, 7)
-            .padding(.vertical, 3.5)
-            .background(Color.white.opacity(0.09))
-            .cornerRadius(5)
-        }
-        .buttonStyle(.plain)
-    }
+
     
     private func agentShortName(_ agent: CodeAgentType) -> String {
         switch agent {

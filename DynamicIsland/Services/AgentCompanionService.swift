@@ -185,6 +185,9 @@ public final class AgentCompanionService: ObservableObject {
             at: 0
         )
         if activityLog.count > 30 { activityLog.removeLast() }
+        
+        // Audio feedback chime for agent action
+        NSSound(named: "Tink")?.play()
     }
     
     public func requestPermission(agent: CodeAgentType, actionOrTool: String, detail: String = "") {

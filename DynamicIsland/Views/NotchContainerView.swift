@@ -14,7 +14,7 @@ public struct NotchContainerView: View {
         case .hud:
             return 18
         case .compact:
-            return 16
+            return 18
         }
     }
     

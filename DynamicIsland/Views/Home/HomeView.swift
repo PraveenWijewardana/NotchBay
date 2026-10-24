@@ -62,13 +62,21 @@ public struct HomeView: View {
         nextEventItem?.colorHex ?? "#BF5AF2"
     }
     
-    // MARK: - Media Formatted Duration
+    // MARK: - Media Formatted Properties
     private var durationFormatted: String {
         let total = Int(mediaService.currentTrack.duration)
         guard total > 0 else { return "0:00" }
         let mins = total / 60
         let secs = total % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+    
+    private var volumeIconName: String {
+        let vol = mediaService.currentTrack.volume
+        if vol <= 0.01 { return "speaker.slash.fill" }
+        if vol < 0.33 { return "speaker.wave.1.fill" }
+        if vol < 0.66 { return "speaker.wave.2.fill" }
+        return "speaker.wave.3.fill"
     }
     
     public var body: some View {
@@ -105,18 +113,35 @@ public struct HomeView: View {
     // MARK: - Column 1: Music Player
     private var musicColumn: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Track Title & Artist
-            VStack(alignment: .leading, spacing: 2) {
-                Text(mediaService.currentTrack.title)
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+            // Track Title & Artist + Animated Audio Equalizer
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(mediaService.currentTrack.title)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    
+                    Text(mediaService.currentTrack.artist)
+                        .font(.system(size: 11.5, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.6))
+                        .lineLimit(1)
+                }
                 
-                Text(mediaService.currentTrack.artist)
-                    .font(.system(size: 11.5, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.6))
-                    .lineLimit(1)
+                Spacer(minLength: 4)
+                
+                // Live Audio Visualizer Bars
+                if mediaService.currentTrack.isPlaying {
+                    HStack(alignment: .bottom, spacing: 1.5) {
+                        ForEach(0..<4, id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(LinearGradient(colors: [.green, .cyan], startPoint: .top, endPoint: .bottom))
+                                .frame(width: 2.2, height: max(3.0, mediaService.audioFrequencies[i] * 13))
+                        }
+                    }
+                    .frame(height: 14)
+                    .padding(.top, 2)
+                }
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -244,6 +269,49 @@ public struct HomeView: View {
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundColor(.white.opacity(0.6))
                 }
+                
+                // Audio Volume Control Slider
+                HStack(spacing: 6) {
+                    Button {
+                        mediaService.toggleMute()
+                    } label: {
+                        Image(systemName: volumeIconName)
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.7))
+                            .frame(width: 14, height: 14)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    GeometryReader { geo in
+                        let vol = max(0.0, min(1.0, CGFloat(mediaService.currentTrack.volume)))
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.18))
+                                .frame(height: 3)
+                            
+                            Capsule()
+                                .fill(Color.white.opacity(0.85))
+                                .frame(width: max(0, min(geo.size.width, geo.size.width * vol)), height: 3)
+                        }
+                        .frame(maxHeight: .infinity, alignment: .center)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    let target = max(0.0, min(1.0, Double(value.location.x / geo.size.width)))
+                                    mediaService.setVolume(target)
+                                }
+                        )
+                    }
+                    .frame(height: 8)
+                    
+                    Text("\(Int(round(mediaService.currentTrack.volume * 100)))%")
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(width: 26, alignment: .trailing)
+                }
+                .padding(.top, 2)
             }
         }
         .padding(.horizontal, 10)
