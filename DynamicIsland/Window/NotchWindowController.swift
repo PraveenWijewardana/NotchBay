@@ -148,8 +148,8 @@ public final class NotchWindowController: NSObject, ObservableObject {
             width = 390
             height = notchHeight
         case .compact:
-            // Symmetrical compact ears: 50pt content + 10pt outer padding on each side of the physical notch
-            let earTotal: CGFloat = 60.0
+            // Symmetrical compact ears: 74pt content + 10pt outer padding on each side of the physical notch
+            let earTotal: CGFloat = 84.0
             width = physicalNotchWidth + (earTotal * 2.0)
             height = max(notchHeight + 4.0, 36.0)
         }

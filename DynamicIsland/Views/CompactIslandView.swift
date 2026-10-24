@@ -6,8 +6,8 @@ public struct CompactIslandView: View {
     @ObservedObject private var networkService: NetworkMonitorService
     @ObservedObject private var mediaService: MediaControllerService
     
-    // Symmetrical ear content width with generous breathing room
-    private let earWidth: CGFloat = 50.0
+    // Symmetrical ear content width with generous breathing room (fits full speeds and single-line status)
+    private let earWidth: CGFloat = 74.0
     
     public init(viewModel: NotchViewModel) {
         self.viewModel = viewModel
@@ -114,6 +114,7 @@ public struct CompactIslandView: View {
                     .monospacedDigit()
                     .foregroundColor(.white)
                     .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
         }
         .scaleEffect(viewModel.isHovering ? 1.05 : 1.0)
@@ -132,6 +133,8 @@ public struct CompactIslandView: View {
                 Text("Approve")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(.yellow)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             } else if viewModel.agentService.status == .executing || viewModel.agentService.status == .coding {
                 Image(systemName: viewModel.agentService.selectedAgent.iconName)
                     .font(.system(size: 9, weight: .bold))
@@ -140,6 +143,8 @@ public struct CompactIslandView: View {
                 Text("Working")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
                     .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             } else if viewModel.agentService.status == .thinking {
                 Image(systemName: "brain")
                     .font(.system(size: 9, weight: .bold))
@@ -148,6 +153,8 @@ public struct CompactIslandView: View {
                 Text("Thinking")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
                     .foregroundColor(.cyan)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             } else if viewModel.agentService.status == .completed {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 9, weight: .bold))
@@ -156,6 +163,8 @@ public struct CompactIslandView: View {
                 Text("Done")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .foregroundColor(.green)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             } else if viewModel.timerConfig.isRunning {
                 Image(systemName: "timer")
                     .font(.system(size: 8.5, weight: .bold))
@@ -165,27 +174,66 @@ public struct CompactIslandView: View {
                     .font(.system(size: 10, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundColor(.yellow)
-            } else {
-                let down = viewModel.networkService.metrics.currentDownSpeed
-                let up = viewModel.networkService.metrics.currentUpSpeed
-                let isUpload = up > down && up >= 1024
-                let activeSpeed = isUpload ? up : down
-                let icon = isUpload ? "arrow.up" : "arrow.down"
-                let iconColor = isUpload ? Color(red: 0.3, green: 0.9, blue: 0.5) : Color(red: 0.2, green: 0.85, blue: 0.95)
-                
-                Image(systemName: icon)
-                    .font(.system(size: 8, weight: .bold))
-                    .foregroundColor(iconColor)
-                    .shadow(color: iconColor.opacity(0.4), radius: 2)
-                
-                Text(NetworkMetrics.formatSpeed(activeSpeed))
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(.white)
                     .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            } else {
+                networkSpeedView
             }
         }
         .scaleEffect(viewModel.isHovering ? 1.05 : 1.0)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: viewModel.isHovering)
+    }
+    
+    // MARK: - Enhanced Network Speed View
+    @ViewBuilder
+    private var networkSpeedView: some View {
+        let down = viewModel.networkService.metrics.currentDownSpeed
+        let up = viewModel.networkService.metrics.currentUpSpeed
+        let isUpload = up > down && up >= 1024
+        let speed = isUpload ? up : down
+        let isActive = speed >= 1024
+        let (val, unit) = formatSpeedParts(speed)
+        
+        let icon = isUpload ? "arrow.up" : "arrow.down"
+        let iconColor: Color = isUpload
+            ? Color(red: 0.3, green: 0.95, blue: 0.55) // Mint Emerald
+            : Color(red: 0.15, green: 0.85, blue: 1.0) // Electric Cyan
+        
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.system(size: 8.5, weight: .bold))
+                .foregroundColor(isActive ? iconColor : Color.white.opacity(0.35))
+                .shadow(color: isActive ? iconColor.opacity(0.6) : .clear, radius: 2.5)
+            
+            HStack(alignment: .firstTextBaseline, spacing: 1.5) {
+                Text(val)
+                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundColor(isActive ? .white : Color.white.opacity(0.45))
+                
+                Text(unit)
+                    .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                    .foregroundColor(isActive ? iconColor.opacity(0.9) : Color.white.opacity(0.35))
+            }
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+    }
+    
+    private func formatSpeedParts(_ bytesPerSec: Double) -> (String, String) {
+        let absBytes = abs(bytesPerSec)
+        if absBytes >= 1_073_741_824 { // 1 GB/s
+            return (String(format: "%.1f", bytesPerSec / 1_073_741_824.0), "GB/s")
+        } else if absBytes >= 1_048_576 { // 1 MB/s
+            if absBytes >= 100 * 1_048_576 {
+                return (String(format: "%.0f", bytesPerSec / 1_048_576.0), "MB/s")
+            } else {
+                return (String(format: "%.1f", bytesPerSec / 1_048_576.0), "MB/s")
+            }
+        } else if absBytes >= 1024 { // 1 KB/s
+            return (String(format: "%.0f", bytesPerSec / 1024.0), "KB/s")
+        } else {
+            return ("0", "KB/s")
+        }
     }
 }
