@@ -71,11 +71,34 @@ public struct CompactIslandView: View {
         }
     }
     
-    // MARK: - Left Ear Content (Music Artwork/Equalizer or CPU Load)
+    // MARK: - Left Ear Content (Call, Music Artwork/Equalizer, or CPU Load)
     @ViewBuilder
     private var leftEarView: some View {
         HStack(spacing: 4) {
-            if mediaService.currentTrack.isPlaying {
+            if let call = viewModel.callService.currentCall {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        viewModel.state = .call
+                    }
+                } label: {
+                    HStack(spacing: 3.5) {
+                        Image(systemName: call.category.appType.iconName)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(call.category.appType.accentColor)
+                            .shadow(color: call.category.appType.accentColor.opacity(0.8), radius: 2)
+                        
+                        HStack(alignment: .bottom, spacing: 1.5) {
+                            ForEach(0..<3, id: \.self) { i in
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(call.category.appType.accentColor)
+                                    .frame(width: 2.0, height: max(3.0, viewModel.callService.callAudioFrequencies[i] * 11))
+                            }
+                        }
+                        .frame(height: 11)
+                    }
+                }
+                .buttonStyle(.plain)
+            } else if mediaService.currentTrack.isPlaying {
                 if let data = mediaService.currentTrack.artworkData,
                    let nsImage = NSImage(data: data) {
                     Image(nsImage: nsImage)
@@ -128,11 +151,39 @@ public struct CompactIslandView: View {
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: viewModel.isHovering)
     }
     
-    // MARK: - Right Ear Content (Agent Status, Timer, or Network Speed)
+    // MARK: - Right Ear Content (Call, Agent Status, Timer, or Network Speed)
     @ViewBuilder
     private var rightEarView: some View {
         HStack(spacing: 3.5) {
-            if viewModel.agentService.status == .awaitingPermission {
+            if let call = viewModel.callService.currentCall {
+                Button {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        viewModel.state = .call
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        if call.status == .incoming {
+                            Image(systemName: "phone.fill")
+                                .font(.system(size: 8.5, weight: .bold))
+                                .foregroundColor(call.category.appType.accentColor)
+                            Text("Call")
+                                .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                                .foregroundColor(call.category.appType.accentColor)
+                        } else {
+                            Text(call.durationFormatted)
+                                .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                                .foregroundColor(.white)
+                            
+                            Image(systemName: "phone.down.fill")
+                                .font(.system(size: 7.5, weight: .bold))
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
+            } else if viewModel.agentService.status == .awaitingPermission {
                 Image(systemName: "exclamationmark.shield.fill")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(.yellow)

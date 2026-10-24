@@ -11,6 +11,8 @@ public struct NotchContainerView: View {
         switch viewModel.state {
         case .expanded:
             return 26
+        case .call:
+            return 24
         case .hud:
             return 18
         case .compact:
@@ -39,21 +41,24 @@ public struct NotchContainerView: View {
                 )
                 .strokeBorder(
                     borderGradient,
-                    lineWidth: (viewModel.state == .hud || viewModel.isHovering) ? 1.5 : 1.0
+                    lineWidth: (viewModel.state == .hud || viewModel.state == .call || viewModel.isHovering) ? 1.5 : 1.0
                 )
             )
             .shadow(
                 color: shadowColor,
-                radius: viewModel.state == .expanded ? 20 : (viewModel.state == .hud ? 12 : (viewModel.isHovering ? 8 : 4)),
+                radius: viewModel.state == .expanded ? 20 : (viewModel.state == .call ? 16 : (viewModel.state == .hud ? 12 : (viewModel.isHovering ? 8 : 4))),
                 x: 0,
-                y: viewModel.state == .expanded ? 8 : (viewModel.state == .hud ? 5 : 2)
+                y: viewModel.state == .expanded ? 8 : (viewModel.state == .call ? 6 : (viewModel.state == .hud ? 5 : 2))
             )
             
-            // Content Switcher: Expanded Dashboard vs. Dynamic Island Live HUD vs. Compact Pill
+            // Content Switcher: Expanded Dashboard vs. Call Banner vs. Live HUD vs. Compact Pill
             Group {
                 if viewModel.state == .expanded {
                     ExpandedIslandView(viewModel: viewModel)
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                } else if viewModel.state == .call, let call = viewModel.callService.currentCall {
+                    CallIslandBannerView(viewModel: viewModel, call: call)
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 } else if viewModel.state == .hud, let alert = viewModel.currentHUDAlert {
                     IslandHUDView(viewModel: viewModel, alert: alert)
                         .transition(.opacity.combined(with: .scale(scale: 0.96)))
@@ -78,6 +83,15 @@ public struct NotchContainerView: View {
     
     // MARK: - Dynamic Border & Glow
     private var borderGradient: LinearGradient {
+        if viewModel.state == .call, let call = viewModel.callService.currentCall {
+            let color = call.category.appType.accentColor
+            return LinearGradient(
+                colors: [color.opacity(0.7), color.opacity(0.35), color.opacity(0.7)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+        }
+        
         if viewModel.state == .hud, let alert = viewModel.currentHUDAlert {
             switch alert.type {
             case .volume(_, let isMuted):
@@ -141,6 +155,10 @@ public struct NotchContainerView: View {
     }
     
     private var shadowColor: Color {
+        if viewModel.state == .call, let call = viewModel.callService.currentCall {
+            return call.category.appType.accentColor.opacity(0.4)
+        }
+        
         if viewModel.state == .hud, let alert = viewModel.currentHUDAlert {
             switch alert.type {
             case .volume(_, let isMuted):

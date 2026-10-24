@@ -144,6 +144,9 @@ public final class NotchWindowController: NSObject, ObservableObject {
         case .expanded:
             width = 570
             height = 270
+        case .call:
+            width = 430
+            height = 70
         case .hud:
             width = 390
             height = notchHeight

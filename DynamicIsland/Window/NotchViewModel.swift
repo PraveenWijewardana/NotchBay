@@ -5,6 +5,7 @@ import Combine
 public enum IslandPresentationState: Equatable, Sendable {
     case compact
     case hud
+    case call
     case expanded
 }
 
@@ -52,6 +53,7 @@ public final class NotchViewModel: ObservableObject {
     @Published public var calendarService = CalendarService()
     @Published public var caffeineService = CaffeineService()
     @Published public var githubActionsService = GitHubActionsService()
+    @Published public var callService = CallService()
     
     // Live Dynamic Island HUD
     @Published public var currentHUDAlert: HUDAlert? = nil
@@ -211,6 +213,36 @@ public final class NotchViewModel: ObservableObject {
                     duration: 4.5
                 )
             )
+        }
+        
+        // Wire up Call Service triggers (Incoming, Active, Ended)
+        callService.onCallStateChanged = { [weak self] session in
+            guard let self = self else { return }
+            if let call = session {
+                if call.status == .incoming || call.status == .active {
+                    if self.state != .expanded {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            self.state = .call
+                        }
+                    }
+                } else if call.status == .ended {
+                    // Stay in .call for 1.2s to display "Call Ended", then collapse
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+                        guard let self = self else { return }
+                        if self.state == .call && self.callService.currentCall == nil {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                self.state = .compact
+                            }
+                        }
+                    }
+                }
+            } else {
+                if self.state == .call {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                        self.state = .compact
+                    }
+                }
+            }
         }
     }
     
