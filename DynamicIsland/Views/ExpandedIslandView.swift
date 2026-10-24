@@ -101,21 +101,6 @@ public struct ExpandedIslandView: View {
                     .buttonStyle(.plain)
                     .help("Lock Screen (Instant)")
                     
-                    // Notification / Bell Button
-                    Button {
-                        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
-                            NSWorkspace.shared.open(url)
-                        }
-                    } label: {
-                        Image(systemName: "bell.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 22, height: 22)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .help("Notifications")
-                    
                     // Collapse / Settings Gear Button
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
