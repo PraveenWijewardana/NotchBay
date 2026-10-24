@@ -110,6 +110,18 @@ public struct NotchContainerView: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
+            case .buildStatus(_, _, _, let isSuccess, _):
+                return LinearGradient(
+                    colors: isSuccess ? [Color.green.opacity(0.6), Color.cyan.opacity(0.5)] : [Color.red.opacity(0.6), Color.orange.opacity(0.5)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            case .caffeine(let isActive, _):
+                return LinearGradient(
+                    colors: isActive ? [Color.orange.opacity(0.6), Color.yellow.opacity(0.5)] : [Color.white.opacity(0.2), Color.gray.opacity(0.2)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
             }
         }
         
@@ -141,6 +153,10 @@ public struct NotchContainerView: View {
                 return Color.orange.opacity(0.5)
             case .agentFinished:
                 return Color.green.opacity(0.5)
+            case .buildStatus(_, _, _, let isSuccess, _):
+                return isSuccess ? Color.green.opacity(0.5) : Color.red.opacity(0.5)
+            case .caffeine(let isActive, _):
+                return isActive ? Color.orange.opacity(0.5) : Color.clear
             }
         }
         if viewModel.isHovering && viewModel.state == .compact {

@@ -104,6 +104,13 @@ public struct CompactIslandView: View {
                 }
                 .frame(height: 12)
             } else {
+                if viewModel.caffeineService.isActive {
+                    Image(systemName: "cup.and.saucer.fill")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.orange)
+                        .shadow(color: .orange.opacity(0.8), radius: 2)
+                }
+                
                 Image(systemName: "cpu")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundColor(cpuColor)
@@ -152,6 +159,17 @@ public struct CompactIslandView: View {
                     .shadow(color: .cyan.opacity(0.6), radius: 2)
                 Text("Thinking")
                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundColor(.cyan)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            } else if let activeBuild = viewModel.githubActionsService.activeRun {
+                Image(systemName: "gearshape.2.fill")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundColor(.cyan)
+                    .shadow(color: .cyan.opacity(0.7), radius: 2)
+                Text("Build \(activeBuild.durationFormatted)")
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .monospacedDigit()
                     .foregroundColor(.cyan)
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)

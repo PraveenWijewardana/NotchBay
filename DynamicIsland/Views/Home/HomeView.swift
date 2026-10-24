@@ -331,34 +331,88 @@ public struct HomeView: View {
     // MARK: - Column 2: Clock & Agenda (Center Column)
     private var calendarColumn: some View {
         VStack(alignment: .leading, spacing: 2) {
-            // Live Digital Time (Center of Home) - Tapping jumps to Timers & Clock
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                    viewModel.selectedPageIndex = 2 // Jump to Timers & Clock
+            // Live Digital Time & Quick Caffeine Toggle
+            HStack(alignment: .center) {
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        viewModel.selectedPageIndex = 2 // Jump to Timers & Clock
+                    }
+                } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 2.5) {
+                        Text(formattedTime)
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        Text(formattedAmPm)
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                            .lineLimit(1)
+                    }
                 }
-            } label: {
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text(formattedTime)
-                        .font(.system(size: 19, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    Text(formattedAmPm)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.6))
+                .buttonStyle(.plain)
+                .help("Open Clock & Timers")
+                
+                Spacer(minLength: 4)
+                
+                // Quick Caffeine Badge
+                Button {
+                    viewModel.caffeineService.toggle()
+                } label: {
+                    HStack(spacing: 2.5) {
+                        Image(systemName: viewModel.caffeineService.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
+                            .font(.system(size: 8.5))
+                        if viewModel.caffeineService.isActive {
+                            Text(viewModel.caffeineService.selectedPreset.shortTitle)
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .lineLimit(1)
+                        }
+                    }
+                    .foregroundColor(viewModel.caffeineService.isActive ? .orange : .white.opacity(0.55))
+                    .padding(.horizontal, 4.5)
+                    .padding(.vertical, 2)
+                    .background(viewModel.caffeineService.isActive ? Color.orange.opacity(0.2) : Color.white.opacity(0.06))
+                    .clipShape(Capsule())
                 }
+                .buttonStyle(.plain)
+                .help("Caffeine: Click to Toggle")
             }
-            .buttonStyle(.plain)
-            .help("Open Clock & Timers")
             
             // Date Header: "Sat, 24 Oct"
-            Text(formattedHeaderDate)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundColor(.white.opacity(0.85))
+            HStack(spacing: 4) {
+                Text(formattedHeaderDate)
+                    .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.85))
+                    .lineLimit(1)
+                
+                if let active = viewModel.githubActionsService.activeRun {
+                    Button {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                            viewModel.selectedPageIndex = 5 // Jump to GitHub CI
+                        }
+                    } label: {
+                        HStack(spacing: 2) {
+                            Image(systemName: "gearshape.2.fill")
+                                .font(.system(size: 7))
+                            Text(active.durationFormatted)
+                                .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                        }
+                        .foregroundColor(.yellow)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1.5)
+                        .background(Color.yellow.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Active Build Running")
+                }
+            }
             
             // Subtitle
             Text(eventCount == 0 ? "No events today" : "\(eventCount) event\(eventCount == 1 ? "" : "s") coming up")
-                .font(.system(size: 10.5, weight: .medium, design: .rounded))
+                .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundColor(.white.opacity(0.5))
+                .lineLimit(1)
             
             Spacer(minLength: 8)
             

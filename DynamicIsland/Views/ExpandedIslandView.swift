@@ -44,6 +44,50 @@ public struct ExpandedIslandView: View {
                         .frame(width: 1, height: 14)
                         .padding(.horizontal, 1)
                     
+                    // Caffeine Sleep Prevention Button with Presets Menu
+                    Menu {
+                        Button("Keep Awake Indefinitely") {
+                            viewModel.caffeineService.activate(preset: .indefinite)
+                        }
+                        Button("15 Minutes") {
+                            viewModel.caffeineService.activate(preset: .minutes15)
+                        }
+                        Button("30 Minutes") {
+                            viewModel.caffeineService.activate(preset: .minutes30)
+                        }
+                        Button("1 Hour") {
+                            viewModel.caffeineService.activate(preset: .hours1)
+                        }
+                        Button("2 Hours") {
+                            viewModel.caffeineService.activate(preset: .hours2)
+                        }
+                        if viewModel.caffeineService.isActive {
+                            Divider()
+                            Button("Turn Off Caffeine") {
+                                viewModel.caffeineService.deactivate()
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: viewModel.caffeineService.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(viewModel.caffeineService.isActive ? .orange : .white.opacity(0.85))
+                                .shadow(color: viewModel.caffeineService.isActive ? .orange.opacity(0.7) : .clear, radius: 2)
+                            
+                            if viewModel.caffeineService.isActive {
+                                Text(viewModel.caffeineService.selectedPreset.shortTitle)
+                                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                                    .foregroundColor(.orange)
+                            }
+                        }
+                        .padding(.horizontal, viewModel.caffeineService.isActive ? 5 : 2)
+                        .frame(height: 22)
+                        .background(viewModel.caffeineService.isActive ? Color.orange.opacity(0.18) : Color.clear)
+                        .clipShape(Capsule())
+                    }
+                    .menuStyle(.borderlessButton)
+                    .help("Caffeine: Prevent Mac Sleep")
+                    
                     // Lock Screen Button (Instant SACLockScreenImmediate)
                     Button {
                         lockScreen()

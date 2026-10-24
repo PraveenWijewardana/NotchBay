@@ -164,6 +164,26 @@ public struct IslandHUDView: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(.green)
             }
+            
+        case .buildStatus(_, _, _, let isSuccess, _):
+            ZStack {
+                Circle()
+                    .fill(isSuccess ? Color.green.opacity(0.2) : Color.red.opacity(0.2))
+                    .frame(width: 22, height: 22)
+                Image(systemName: alert.icon)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(isSuccess ? .green : .red)
+            }
+            
+        case .caffeine(let isActive, _):
+            ZStack {
+                Circle()
+                    .fill(isActive ? Color.orange.opacity(0.2) : Color.white.opacity(0.12))
+                    .frame(width: 22, height: 22)
+                Image(systemName: alert.icon)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(isActive ? .orange : .white)
+            }
         }
     }
     
@@ -192,6 +212,16 @@ public struct IslandHUDView: View {
             
         case .agentFinished:
             return LinearGradient(colors: [.green, .teal], startPoint: .leading, endPoint: .trailing)
+            
+        case .buildStatus(_, _, _, let isSuccess, _):
+            return isSuccess 
+                ? LinearGradient(colors: [.green, .cyan], startPoint: .leading, endPoint: .trailing)
+                : LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
+                
+        case .caffeine(let isActive, _):
+            return isActive
+                ? LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing)
+                : LinearGradient(colors: [.white.opacity(0.4), .gray], startPoint: .leading, endPoint: .trailing)
         }
     }
     
@@ -209,6 +239,10 @@ public struct IslandHUDView: View {
             return .yellow
         case .agentFinished:
             return .green
+        case .buildStatus(_, _, _, let isSuccess, _):
+            return isSuccess ? .green : .red
+        case .caffeine(let isActive, _):
+            return isActive ? .orange : .white
         }
     }
 }

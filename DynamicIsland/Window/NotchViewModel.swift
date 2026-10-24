@@ -33,6 +33,11 @@ public final class NotchViewModel: ObservableObject {
             systemService.isDetailedMonitoringActive = (state == .expanded && selectedPageIndex == 1)
         }
     }
+    public enum DeveloperDashboardTab: String, CaseIterable, Sendable {
+        case agents = "Agents"
+        case gitHub = "GitHub CI/CD"
+    }
+    @Published public var selectedDeveloperTab: DeveloperDashboardTab = .agents
     @Published public var systemDetailMode: SystemDetailBlock? = nil
     @Published public var isHovering: Bool = false
     
@@ -45,6 +50,8 @@ public final class NotchViewModel: ObservableObject {
     @Published public var agentService = AgentCompanionService()
     @Published public var weatherService = WeatherService()
     @Published public var calendarService = CalendarService()
+    @Published public var caffeineService = CaffeineService()
+    @Published public var githubActionsService = GitHubActionsService()
     
     // Live Dynamic Island HUD
     @Published public var currentHUDAlert: HUDAlert? = nil
@@ -172,6 +179,39 @@ public final class NotchViewModel: ObservableObject {
                 self.hudService.evaluateTrackChange(self.mediaService.currentTrack)
             }
             .store(in: &cancellables)
+            
+        // Wire up Caffeine Sleep Prevention HUD
+        caffeineService.onStatusChanged = { [weak self] isActive, preset in
+            self?.presentHUD(
+                HUDAlert(
+                    type: .caffeine(isActive: isActive, presetTitle: preset.title),
+                    title: "Caffeine",
+                    subtitle: isActive ? "Stay Awake (\(preset.shortTitle))" : "Normal Sleep",
+                    icon: isActive ? "cup.and.saucer.fill" : "cup.and.saucer",
+                    duration: 2.5
+                )
+            )
+        }
+        
+        // Wire up GitHub Actions / CI/CD Build Completion HUD
+        githubActionsService.onBuildCompleted = { [weak self] run in
+            let isSuccess = run.status == .success
+            self?.presentHUD(
+                HUDAlert(
+                    type: .buildStatus(
+                        runId: run.id,
+                        repo: run.repoName,
+                        branch: run.branch,
+                        isSuccess: isSuccess,
+                        message: run.durationFormatted
+                    ),
+                    title: isSuccess ? "Build Passed" : "Build Failed",
+                    subtitle: "\(run.branch) • \(run.durationFormatted)",
+                    icon: isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill",
+                    duration: 4.5
+                )
+            )
+        }
     }
     
     // MARK: - Live HUD Alerts (Volume, Battery, Track)

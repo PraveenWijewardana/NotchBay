@@ -7,6 +7,8 @@ public enum HUDEventType: Equatable, Sendable {
     case track(title: String, artist: String)
     case agentPermission(agent: CodeAgentType, requestId: String, action: String)
     case agentFinished(agent: CodeAgentType, message: String)
+    case buildStatus(runId: String, repo: String, branch: String, isSuccess: Bool, message: String)
+    case caffeine(isActive: Bool, presetTitle: String)
 }
 
 public struct HUDAlert: Identifiable, Equatable, Sendable {
