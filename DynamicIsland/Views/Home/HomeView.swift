@@ -379,34 +379,10 @@ public struct HomeView: View {
             }
             
             // Date Header: "Sat, 24 Oct"
-            HStack(spacing: 4) {
-                Text(formattedHeaderDate)
-                    .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.85))
-                    .lineLimit(1)
-                
-                if let active = viewModel.githubActionsService.activeRun {
-                    Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            viewModel.selectedPageIndex = 5 // Jump to GitHub CI
-                        }
-                    } label: {
-                        HStack(spacing: 2) {
-                            Image(systemName: "gearshape.2.fill")
-                                .font(.system(size: 7))
-                            Text(active.durationFormatted)
-                                .font(.system(size: 7.5, weight: .bold, design: .monospaced))
-                        }
-                        .foregroundColor(.yellow)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1.5)
-                        .background(Color.yellow.opacity(0.2))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .help("Active Build Running")
-                }
-            }
+            Text(formattedHeaderDate)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.85))
+                .lineLimit(1)
             
             // Subtitle
             Text(eventCount == 0 ? "No events today" : "\(eventCount) event\(eventCount == 1 ? "" : "s") coming up")

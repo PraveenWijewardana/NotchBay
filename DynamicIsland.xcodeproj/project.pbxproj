@@ -42,8 +42,6 @@
 		B10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift */; };
 		B10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift */; };
 		B10000170000000000000017 /* DynamicIsland/Services/CaffeineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000170000000000000017 /* DynamicIsland/Services/CaffeineService.swift */; };
-		B10000180000000000000018 /* DynamicIsland/Models/BuildRunModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000180000000000000018 /* DynamicIsland/Models/BuildRunModel.swift */; };
-		B10000190000000000000019 /* DynamicIsland/Services/GitHubActionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000190000000000000019 /* DynamicIsland/Services/GitHubActionsService.swift */; };
 		B10000200000000000000020 /* DynamicIsland/Models/CallModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000200000000000000020 /* DynamicIsland/Models/CallModel.swift */; };
 		B10000210000000000000021 /* DynamicIsland/Services/CallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000210000000000000021 /* DynamicIsland/Services/CallService.swift */; };
 		B10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift */; };
@@ -93,8 +91,6 @@
 		A10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Weather/WeatherDashboardView.swift; sourceTree = "<group>"; };
 		A10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Calendar/CalendarDashboardView.swift; sourceTree = "<group>"; };
 		A10000170000000000000017 /* DynamicIsland/Services/CaffeineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/CaffeineService.swift; sourceTree = "<group>"; };
-		A10000180000000000000018 /* DynamicIsland/Models/BuildRunModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/BuildRunModel.swift; sourceTree = "<group>"; };
-		A10000190000000000000019 /* DynamicIsland/Services/GitHubActionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/GitHubActionsService.swift; sourceTree = "<group>"; };
 		A10000200000000000000020 /* DynamicIsland/Models/CallModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/CallModel.swift; sourceTree = "<group>"; };
 		A10000210000000000000021 /* DynamicIsland/Services/CallService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/CallService.swift; sourceTree = "<group>"; };
 		A10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Call/CallIslandBannerView.swift; sourceTree = "<group>"; };
@@ -180,8 +176,6 @@
 				A10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift */,
 				A10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift */,
 				A10000170000000000000017 /* DynamicIsland/Services/CaffeineService.swift */,
-				A10000180000000000000018 /* DynamicIsland/Models/BuildRunModel.swift */,
-				A10000190000000000000019 /* DynamicIsland/Services/GitHubActionsService.swift */,
 				A10000200000000000000020 /* DynamicIsland/Models/CallModel.swift */,
 				A10000210000000000000021 /* DynamicIsland/Services/CallService.swift */,
 				A10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift */,
@@ -301,8 +295,6 @@
 				B10000130000000000000013 /* DynamicIsland/Views/Weather/WeatherDashboardView.swift in Sources */,
 				B10000140000000000000014 /* DynamicIsland/Views/Calendar/CalendarDashboardView.swift in Sources */,
 				B10000170000000000000017 /* DynamicIsland/Services/CaffeineService.swift in Sources */,
-				B10000180000000000000018 /* DynamicIsland/Models/BuildRunModel.swift in Sources */,
-				B10000190000000000000019 /* DynamicIsland/Services/GitHubActionsService.swift in Sources */,
 				B10000200000000000000020 /* DynamicIsland/Models/CallModel.swift in Sources */,
 				B10000210000000000000021 /* DynamicIsland/Services/CallService.swift in Sources */,
 				B10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift in Sources */,

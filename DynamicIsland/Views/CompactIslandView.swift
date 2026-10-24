@@ -213,17 +213,6 @@ public struct CompactIslandView: View {
                     .foregroundColor(.cyan)
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
-            } else if let activeBuild = viewModel.githubActionsService.activeRun {
-                Image(systemName: "gearshape.2.fill")
-                    .font(.system(size: 8.5, weight: .bold))
-                    .foregroundColor(.cyan)
-                    .shadow(color: .cyan.opacity(0.7), radius: 2)
-                Text("Build \(activeBuild.durationFormatted)")
-                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(.cyan)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
             } else if viewModel.agentService.status == .completed {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 9, weight: .bold))
