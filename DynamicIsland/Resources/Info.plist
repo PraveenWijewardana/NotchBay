@@ -32,5 +32,9 @@
     <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>NotchBay uses Apple Events to control music playback and show artwork from Spotify and Apple Music.</string>
+    <key>NSContactsUsageDescription</key>
+    <string>NotchBay matches incoming calls to your Contacts to display real caller names and photos in Dynamic Island.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>NotchBay detects incoming calls and caller information from FaceTime, WhatsApp, and phone calls.</string>
 </dict>
 </plist>

@@ -63,26 +63,33 @@ public struct CallContact: Identifiable, Sendable {
     public let id: String
     public let name: String
     public let numberOrHandle: String
+    public let avatarImageData: Data?
     public let avatarColorHex: String
     
     public init(
         id: String = UUID().uuidString,
         name: String,
         numberOrHandle: String = "",
+        avatarImageData: Data? = nil,
         avatarColorHex: String = "#34C759"
     ) {
         self.id = id
         self.name = name
         self.numberOrHandle = numberOrHandle
+        self.avatarImageData = avatarImageData
         self.avatarColorHex = avatarColorHex
     }
     
     public var initials: String {
-        let parts = name.split(separator: " ")
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.split(separator: " ")
         if parts.count >= 2 {
             return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()
         }
-        return String(name.prefix(2)).uppercased()
+        if !trimmed.isEmpty {
+            return String(trimmed.prefix(2)).uppercased()
+        }
+        return "📞"
     }
 }
 
@@ -95,6 +102,7 @@ public struct ActiveCallSession: Identifiable, Sendable {
     public var durationSeconds: Int
     public var isMuted: Bool
     public var isSpeaker: Bool
+    public var appPID: pid_t?
     
     public init(
         id: String = UUID().uuidString,
@@ -104,7 +112,8 @@ public struct ActiveCallSession: Identifiable, Sendable {
         startedAt: Date? = nil,
         durationSeconds: Int = 0,
         isMuted: Bool = false,
-        isSpeaker: Bool = false
+        isSpeaker: Bool = false,
+        appPID: pid_t? = nil
     ) {
         self.id = id
         self.contact = contact
@@ -114,6 +123,7 @@ public struct ActiveCallSession: Identifiable, Sendable {
         self.durationSeconds = durationSeconds
         self.isMuted = isMuted
         self.isSpeaker = isSpeaker
+        self.appPID = appPID
     }
     
     public var durationFormatted: String {

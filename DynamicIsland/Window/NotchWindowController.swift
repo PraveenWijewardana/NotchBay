@@ -106,6 +106,9 @@ public final class NotchWindowController: NSObject, ObservableObject {
     
     private func animateFrame(for state: IslandPresentationState) {
         guard let panel = panel else { return }
+        if state == .call {
+            panel.orderFrontRegardless()
+        }
         let targetFrame = calculateFrame(state: state)
         
         // Fluid Apple cubic spring animation pulling UP into the notch or dropping down smoothly
@@ -145,8 +148,8 @@ public final class NotchWindowController: NSObject, ObservableObject {
             width = 570
             height = 270
         case .call:
-            width = 430
-            height = 70
+            width = max(460.0, physicalNotchWidth + 240.0)
+            height = notchHeight + 62.0
         case .hud:
             width = 390
             height = notchHeight
