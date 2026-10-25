@@ -184,45 +184,85 @@ public struct CompactIslandView: View {
                 }
                 .buttonStyle(.plain)
             } else if viewModel.agentService.status == .awaitingPermission {
-                Image(systemName: "exclamationmark.shield.fill")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.yellow)
-                    .shadow(color: .yellow.opacity(0.8), radius: 3)
-                Text("Approve")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundColor(.yellow)
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        viewModel.selectedPageIndex = 5
+                        viewModel.state = .expanded
+                    }
+                } label: {
+                    HStack(spacing: 3.5) {
+                        Image(systemName: "exclamationmark.shield.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.yellow)
+                            .shadow(color: .yellow.opacity(0.8), radius: 3)
+                        Text("Approve")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(.yellow)
+                    }
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
             } else if viewModel.agentService.status == .executing || viewModel.agentService.status == .coding {
-                Image(systemName: viewModel.agentService.selectedAgent.iconName)
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
-                    .shadow(color: viewModel.agentService.selectedAgent.accentColor.opacity(0.6), radius: 2)
-                Text("Working")
-                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                    .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        viewModel.selectedPageIndex = 5
+                        viewModel.state = .expanded
+                    }
+                } label: {
+                    HStack(spacing: 3.5) {
+                        Image(systemName: viewModel.agentService.selectedAgent.iconName)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+                            .shadow(color: viewModel.agentService.selectedAgent.accentColor.opacity(0.6), radius: 2)
+                        Text("Working")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(viewModel.agentService.selectedAgent.accentColor)
+                    }
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
             } else if viewModel.agentService.status == .thinking {
-                Image(systemName: "brain")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.cyan)
-                    .shadow(color: .cyan.opacity(0.6), radius: 2)
-                Text("Thinking")
-                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        viewModel.selectedPageIndex = 5
+                        viewModel.state = .expanded
+                    }
+                } label: {
+                    HStack(spacing: 3.5) {
+                        Image(systemName: "brain")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.cyan)
+                            .shadow(color: .cyan.opacity(0.6), radius: 2)
+                        Text("Thinking")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.cyan)
+                    }
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
             } else if viewModel.agentService.status == .completed {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.green)
-                    .shadow(color: .green.opacity(0.6), radius: 2)
-                Text("Done")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundColor(.green)
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        viewModel.selectedPageIndex = 5
+                        viewModel.state = .expanded
+                    }
+                } label: {
+                    HStack(spacing: 3.5) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.green)
+                            .shadow(color: .green.opacity(0.6), radius: 2)
+                        Text("Done")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(.green)
+                    }
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
             } else if viewModel.timerConfig.isRunning {
                 Image(systemName: "timer")
                     .font(.system(size: 8.5, weight: .bold))

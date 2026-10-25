@@ -61,6 +61,10 @@ public enum AgentExecutionStatus: String, CaseIterable, Sendable {
         case .error: return .red
         }
     }
+    
+    public var isBusy: Bool {
+        self == .thinking || self == .coding || self == .executing
+    }
 }
 
 public struct AgentPermissionRequest: Identifiable, Sendable {
@@ -110,5 +114,50 @@ public struct AgentActivityItem: Identifiable, Sendable {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss"
         return formatter.string(from: timestamp)
+    }
+}
+
+// MARK: - AI Agent Usage Metrics (Inspired by CodeNotch)
+public struct AgentUsageMetrics: Equatable, Sendable {
+    public var requestsToday: Int
+    public var totalRequests: Int
+    public var lastRequestDate: Date?
+    public var activeSessionsCount: Int
+    public var currentTurnDuration: TimeInterval
+    public var dailyTarget: Int // Soft daily benchmark for gauge ring (e.g. 500)
+    
+    public init(
+        requestsToday: Int = 0,
+        totalRequests: Int = 0,
+        lastRequestDate: Date? = nil,
+        activeSessionsCount: Int = 0,
+        currentTurnDuration: TimeInterval = 0,
+        dailyTarget: Int = 500
+    ) {
+        self.requestsToday = requestsToday
+        self.totalRequests = totalRequests
+        self.lastRequestDate = lastRequestDate
+        self.activeSessionsCount = activeSessionsCount
+        self.currentTurnDuration = currentTurnDuration
+        self.dailyTarget = dailyTarget
+    }
+    
+    public var gaugeFraction: Double {
+        guard dailyTarget > 0 else { return 0.0 }
+        return min(max(Double(requestsToday) / Double(dailyTarget), 0.0), 1.0)
+    }
+    
+    public var formattedLastActive: String {
+        guard let date = lastRequestDate else { return "Never" }
+        let elapsed = max(0, Date().timeIntervalSince(date))
+        if elapsed < 60 {
+            return "Just now"
+        } else if elapsed < 3600 {
+            return "\(Int(elapsed / 60))m ago"
+        } else if elapsed < 86400 {
+            return "\(Int(elapsed / 3600))h ago"
+        } else {
+            return "\(Int(elapsed / 86400))d ago"
+        }
     }
 }

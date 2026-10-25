@@ -11,9 +11,11 @@ public final class AgentAutoDetectorService: ObservableObject {
     private weak var companion: AgentCompanionService?
     
     private var monitorTimer: Timer?
+    private var usageTimer: Timer?
     private var lastAntigravityStepIndex: Int = -1
     private var lastAntigravityStatus: String = ""
     private var lastActiveAgent: CodeAgentType?
+    private var isScanningUsage: Bool = false
     
     // Process CPU history to detect active vs. idle state
     private var previousCpuTimes: [pid_t: UInt64] = [:]
@@ -23,7 +25,6 @@ public final class AgentAutoDetectorService: ObservableObject {
     private let homeDir = FileManager.default.homeDirectoryForCurrentUser
     private var lastBrainFolderUrl: URL?
     private var lastTranscriptModDate: Date?
-    
     private var lastBrainFolderModDate: Date?
     
     public init(companion: AgentCompanionService) {
@@ -32,18 +33,30 @@ public final class AgentAutoDetectorService: ObservableObject {
     
     public func start() {
         stop()
-        // Poll every 2.5 seconds with low overhead
-        monitorTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { [weak self] _ in
+        
+        // Poll process & transcript state every 2.0 seconds with low overhead
+        monitorTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.performMonitoringTick()
             }
         }
+        
+        // Scan AI Usage every 6.0 seconds in background
+        usageTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.scanUsageMetrics()
+            }
+        }
+        
         performMonitoringTick()
+        scanUsageMetrics()
     }
     
     public func stop() {
         monitorTimer?.invalidate()
         monitorTimer = nil
+        usageTimer?.invalidate()
+        usageTimer = nil
     }
     
     // MARK: - Main Monitoring Tick
@@ -99,7 +112,6 @@ public final class AgentAutoDetectorService: ObservableObject {
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: transcriptUrl.path),
               let modDate = attrs[.modificationDate] as? Date else { return false }
         
-        // If file was modified recently or date changed
         if lastTranscriptModDate == nil || modDate > lastTranscriptModDate! {
             lastTranscriptModDate = modDate
             parseTranscriptTail(url: transcriptUrl)
@@ -116,8 +128,8 @@ public final class AgentAutoDetectorService: ObservableObject {
         let fileSize = handle.seekToEndOfFile()
         guard fileSize > 0 else { return }
         
-        // Read up to last 8KB of the transcript
-        let readLen = min(fileSize, 8192)
+        // Read up to last 16KB of the transcript
+        let readLen = min(fileSize, 16384)
         handle.seek(toFileOffset: fileSize - readLen)
         let data = handle.readDataToEndOfFile()
         
@@ -131,7 +143,7 @@ public final class AgentAutoDetectorService: ObservableObject {
         let type = json["type"] as? String ?? ""
         let status = json["status"] as? String ?? ""
         
-        // Avoid duplicate triggers for same step & status
+        // Avoid duplicate triggers for identical step index & status
         if stepIndex == lastAntigravityStepIndex && status == lastAntigravityStatus {
             return
         }
@@ -143,7 +155,7 @@ public final class AgentAutoDetectorService: ObservableObject {
             let content = (json["content"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             
             if status == "DONE" && toolCalls.isEmpty && !content.isEmpty {
-                // Genuine final task completion
+                // Genuine final task completion -> FINISH state
                 let shortMsg = String(content.prefix(120))
                 companion?.completeTask(agent: .antigravity, message: shortMsg)
             } else if let firstTool = toolCalls.first {
@@ -152,22 +164,110 @@ public final class AgentAutoDetectorService: ObservableObject {
                 let toolName = firstTool["name"] as? String ?? "tool"
                 let actionText = toolAction ?? toolSummary ?? "Executing \(toolName)"
                 
-                // ONLY notify if user action/decision is required
-                if toolName.contains("ask_question") {
-                    companion?.requestPermission(agent: .antigravity, actionOrTool: actionText, detail: "User action needed")
+                // If interactive confirmation/decision is needed -> REQUEST PERMISSION state
+                if toolName.contains("ask_question") || toolName.contains("permission") {
+                    companion?.requestPermission(agent: .antigravity, actionOrTool: actionText, detail: "User approval requested")
                 } else {
-                    // Update silently in background for dashboard log — NO HUD notification for command runs
-                    companion?.updateSilentStatus(agent: .antigravity, status: .coding, message: actionText)
+                    // Tool is running -> WAIT / EXECUTING state
+                    companion?.setWorking(agent: .antigravity, status: .executing, message: actionText)
                 }
             } else {
-                companion?.updateSilentStatus(agent: .antigravity, status: .thinking, message: "Synthesizing solution...")
+                // Thinking / generating -> WAIT / THINKING state
+                companion?.setWorking(agent: .antigravity, status: .thinking, message: "Synthesizing solution...")
             }
         } else if type == "USER_INPUT" {
-            companion?.updateSilentStatus(agent: .antigravity, status: .thinking, message: "Analyzing user request...")
+            // User submitted message -> WAIT / THINKING state
+            companion?.setWorking(agent: .antigravity, status: .thinking, message: "Analyzing user prompt...")
         }
     }
     
-    // MARK: - 2. Running Process Table Scanner
+    // MARK: - 2. AI Usage Scanner (CodeNotch Implementation)
+    public func scanUsageMetrics() {
+        guard !isScanningUsage else { return }
+        isScanningUsage = true
+        
+        let home = self.homeDir
+        
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            guard let self = self else { return }
+            defer {
+                Task { @MainActor [weak self] in
+                    self?.isScanningUsage = false
+                }
+            }
+            
+            let geminiDir = home.appendingPathComponent(".gemini")
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: geminiDir.path)) ?? []
+            let brainRoots = names
+                .filter { $0.hasPrefix("antigravity") }
+                .map { geminiDir.appendingPathComponent($0).appendingPathComponent("brain") }
+                .filter { FileManager.default.fileExists(atPath: $0.path) }
+            
+            var todayCount = 0
+            var totalTrajCount = 0
+            var latestDate: Date?
+            var activeTodaySessions = 0
+            let calendar = Calendar.current
+            let now = Date()
+            
+            let isoFormatter = ISO8601DateFormatter()
+            isoFormatter.formatOptions = [.withInternetDateTime]
+            let fracFormatter = ISO8601DateFormatter()
+            fracFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            
+            for root in brainRoots {
+                guard let trajectories = try? FileManager.default.contentsOfDirectory(
+                    at: root, includingPropertiesForKeys: [.contentModificationDateKey]
+                ) else { continue }
+                
+                totalTrajCount += trajectories.count
+                
+                for traj in trajectories {
+                    guard let vals = try? traj.resourceValues(forKeys: [.contentModificationDateKey]),
+                          let mdate = vals.contentModificationDate else { continue }
+                    
+                    // Fast filter: only examine trajectories modified today
+                    if calendar.isDate(mdate, inSameDayAs: now) {
+                        activeTodaySessions += 1
+                        let transcript = traj.appendingPathComponent(".system_generated/logs/transcript.jsonl")
+                        guard let text = try? String(contentsOf: transcript, encoding: .utf8) else { continue }
+                        
+                        for line in text.split(separator: "\n") {
+                            guard line.contains("\"MODEL\"") else { continue }
+                            guard let data = line.data(using: .utf8),
+                                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+                                  json["source"] as? String == "MODEL" else { continue }
+                            
+                            todayCount += 1
+                            if let atStr = json["created_at"] as? String {
+                                let parsed = isoFormatter.date(from: atStr) ?? fracFormatter.date(from: atStr)
+                                if let parsed = parsed {
+                                    if latestDate == nil || parsed > latestDate! {
+                                        latestDate = parsed
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            Task { @MainActor [weak self] in
+                guard let self = self, let comp = self.companion else { return }
+                var metrics = comp.usageMetrics
+                metrics.requestsToday = todayCount
+                metrics.totalRequests = totalTrajCount
+                if let latest = latestDate {
+                    metrics.lastRequestDate = latest
+                }
+                metrics.activeSessionsCount = activeTodaySessions
+                metrics.dailyTarget = max(500, ((todayCount / 100) + 1) * 100)
+                comp.usageMetrics = metrics
+            }
+        }
+    }
+    
+    // MARK: - 3. Running Process Table Scanner
     private func checkRunningAgentProcesses(antigravityHandledByLogs: Bool) {
         var pids = [pid_t](repeating: 0, count: 2048)
         let bytesUsed = proc_listpids(UInt32(PROC_ALL_PIDS), 0, &pids, Int32(MemoryLayout<pid_t>.size * pids.count))
@@ -194,7 +294,7 @@ public final class AgentAutoDetectorService: ObservableObject {
                 agent = .cursor
             } else if name.contains("copilot-runtime") || name.contains("copilot") {
                 agent = .copilot
-            } else if !antigravityHandledByLogs && name.contains("antigravity") {
+            } else if !antigravityHandledByLogs && (name.contains("antigravity") || name == "agy") {
                 agent = .antigravity
             } else {
                 agent = nil
@@ -210,8 +310,8 @@ public final class AgentAutoDetectorService: ObservableObject {
             
             let delta = currentCpu > prevCpu ? currentCpu - prevCpu : 0
             
-            // If delta > 0, process consumed CPU in the last 1.5s
-            if delta > 15_000_000 { // ~15ms of CPU time in 1.5s interval
+            // If delta > 0, process consumed CPU in the last interval
+            if delta > 15_000_000 { // ~15ms of CPU time in 2.0s interval
                 let activityDesc: String
                 switch matchedAgent {
                 case .claude:
@@ -236,14 +336,14 @@ public final class AgentAutoDetectorService: ObservableObject {
         // If an agent is actively computing:
         if let (activeAgent, desc) = activeAgentRunning {
             if companion?.status != .awaitingPermission {
-                companion?.updateSilentStatus(agent: activeAgent, status: .executing, message: desc)
+                companion?.setWorking(agent: activeAgent, status: .executing, message: desc)
             }
             lastActiveAgent = activeAgent
         } else if let prev = lastActiveAgent {
             let idleCount = (consecutiveIdleTicks[prev] ?? 0) + 1
             consecutiveIdleTicks[prev] = idleCount
             
-            // Mark idle silently in dashboard without triggering false completion popups
+            // Mark idle silently in dashboard after active session ends
             if idleCount >= 2 {
                 companion?.updateSilentStatus(agent: prev, status: .idle, message: "Idle & Ready")
                 lastActiveAgent = nil

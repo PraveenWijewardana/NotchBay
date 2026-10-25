@@ -11,9 +11,12 @@ public final class AgentCompanionService: ObservableObject {
     @Published public var activePermissionRequest: AgentPermissionRequest? = nil
     @Published public var activityLog: [AgentActivityItem] = []
     @Published public var isServerRunning: Bool = false
+    @Published public var usageMetrics: AgentUsageMetrics = AgentUsageMetrics()
+    @Published public var turnElapsedSeconds: Int = 0
     
     private var tcpListener: NWListener?
     private var autoDetector: AgentAutoDetectorService?
+    private var turnTimer: Timer?
     
     public var onPermissionRequested: ((AgentPermissionRequest) -> Void)?
     public var onTaskCompleted: ((CodeAgentType, String) -> Void)?
@@ -166,12 +169,43 @@ public final class AgentCompanionService: ObservableObject {
         }
     }
     
-    // MARK: - State Updaters
+    // MARK: - Turn Timer & State Updaters
+    public var formattedTurnElapsed: String {
+        let mins = turnElapsedSeconds / 60
+        let secs = turnElapsedSeconds % 60
+        return String(format: "%02d:%02d", mins, secs)
+    }
+    
+    private func startTurnTimer() {
+        turnTimer?.invalidate()
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self = self, self.status.isBusy else { return }
+                self.turnElapsedSeconds += 1
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.turnTimer = timer
+    }
+    
+    private func stopTurnTimer() {
+        turnTimer?.invalidate()
+        turnTimer = nil
+        turnElapsedSeconds = 0
+    }
+    
     public func updateSilentStatus(agent: CodeAgentType, status: AgentExecutionStatus, message: String) {
         self.selectedAgent = agent
         self.status = status
         self.currentMessage = message
-        // Silent update for dashboard view only; NO HUD popup and NO audio alert
+        if status.isBusy {
+            if turnTimer == nil {
+                turnElapsedSeconds = 0
+                startTurnTimer()
+            }
+        } else {
+            stopTurnTimer()
+        }
     }
     
     public func setWorking(agent: CodeAgentType, status: AgentExecutionStatus, message: String) {
@@ -179,6 +213,11 @@ public final class AgentCompanionService: ObservableObject {
         self.status = status
         self.currentMessage = message
         self.activePermissionRequest = nil
+        
+        if turnTimer == nil {
+            turnElapsedSeconds = 0
+            startTurnTimer()
+        }
         
         activityLog.insert(
             AgentActivityItem(agent: agent, status: status, message: message),
@@ -215,6 +254,7 @@ public final class AgentCompanionService: ObservableObject {
         self.status = .completed
         self.currentMessage = message
         self.activePermissionRequest = nil
+        stopTurnTimer()
         
         activityLog.insert(
             AgentActivityItem(agent: agent, status: .completed, message: message),
@@ -233,6 +273,7 @@ public final class AgentCompanionService: ObservableObject {
         self.status = .error
         self.currentMessage = message
         self.activePermissionRequest = nil
+        stopTurnTimer()
         
         activityLog.insert(
             AgentActivityItem(agent: agent, status: .error, message: message),
@@ -246,6 +287,7 @@ public final class AgentCompanionService: ObservableObject {
         self.activePermissionRequest = nil
         self.status = .executing
         self.currentMessage = "Executing approved command..."
+        startTurnTimer()
         
         activityLog.insert(
             AgentActivityItem(agent: req.agent, status: .executing, message: "Approved: \(req.actionOrTool)"),
@@ -259,6 +301,7 @@ public final class AgentCompanionService: ObservableObject {
         self.activePermissionRequest = nil
         self.status = .idle
         self.currentMessage = "Command Denied"
+        stopTurnTimer()
         
         activityLog.insert(
             AgentActivityItem(agent: req.agent, status: .error, message: "Denied: \(req.actionOrTool)"),
