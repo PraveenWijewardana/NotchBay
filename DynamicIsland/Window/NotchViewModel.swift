@@ -48,6 +48,8 @@ public final class NotchViewModel: ObservableObject {
     @Published public var calendarService = CalendarService()
     @Published public var caffeineService = CaffeineService()
     @Published public var callService = CallService()
+    @Published public var clipboardService = ClipboardService()
+    @Published public var fileTransferService = FileTransferService()
     
     // Live Dynamic Island HUD
     @Published public var currentHUDAlert: HUDAlert? = nil
@@ -214,6 +216,27 @@ public final class NotchViewModel: ObservableObject {
                         self.state = .compact
                     }
                 }
+            }
+        }
+        
+        // Wire up File Transfer / AirDrop triggers
+        fileTransferService.onTransferChanged = { [weak self] item in
+            guard let self = self else { return }
+            if let transfer = item {
+                let alert = HUDAlert(
+                    type: .fileTransfer(
+                        name: transfer.filename,
+                        progress: transfer.progress,
+                        isAirDrop: transfer.isAirDrop,
+                        isCompleted: transfer.isCompleted
+                    ),
+                    title: transfer.isAirDrop ? "AirDrop" : "Download",
+                    subtitle: transfer.isCompleted ? "Saved to Downloads" : transfer.progressPercentFormatted,
+                    icon: transfer.isAirDrop ? "airdrop" : "arrow.down.circle.fill",
+                    progress: transfer.progress,
+                    duration: transfer.isCompleted ? 3.5 : 2.5
+                )
+                self.presentHUD(alert)
             }
         }
     }

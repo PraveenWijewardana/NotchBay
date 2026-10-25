@@ -8,6 +8,8 @@ public enum HUDEventType: Equatable, Sendable {
     case agentPermission(agent: CodeAgentType, requestId: String, action: String)
     case agentFinished(agent: CodeAgentType, message: String)
     case caffeine(isActive: Bool, presetTitle: String)
+    case magSafe(level: Int, isPluggedIn: Bool, timeRemaining: String?)
+    case fileTransfer(name: String, progress: Double, isAirDrop: Bool, isCompleted: Bool)
 }
 
 public struct HUDAlert: Identifiable, Equatable, Sendable {

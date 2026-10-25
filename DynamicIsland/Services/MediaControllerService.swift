@@ -6,6 +6,7 @@ import Combine
 public final class MediaControllerService: ObservableObject {
     @Published public var currentTrack = MediaTrack()
     @Published public var audioFrequencies: [CGFloat] = Array(repeating: 0.1, count: 5)
+    @Published public var isShowingLyrics: Bool = false
     
     private var visualizerTimer: Timer?
     private var playbackTickerTimer: Timer?
@@ -430,6 +431,10 @@ public final class MediaControllerService: ObservableObject {
                 _ = self.executeAppleScript("tell application \"Music\" to set player position to \(clamped)")
             }
         }
+    }
+    
+    public func seekRelative(seconds: Double) {
+        seek(to: currentTrack.currentPosition + seconds)
     }
     
     public func setVolume(_ volume: Double) {

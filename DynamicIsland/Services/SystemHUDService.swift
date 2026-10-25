@@ -249,13 +249,14 @@ public final class SystemHUDService: ObservableObject {
         // 1. Charger connected / disconnected event
         if let prevPlugged = previousIsPluggedIn, prevPlugged != plugged {
             if plugged {
+                let timeStr = metrics.timeToFullMinutes > 0 ? "~\(metrics.timeToFullMinutes)m to full" : "Connected"
                 let alert = HUDAlert(
-                    type: .battery(level: level, isCharging: true, isPluggedIn: true),
-                    title: "Charging",
-                    subtitle: "\(level)%",
-                    icon: "battery.100.bolt",
+                    type: .magSafe(level: level, isPluggedIn: true, timeRemaining: timeStr),
+                    title: "MagSafe",
+                    subtitle: "\(level)% • \(timeStr)",
+                    icon: "bolt.ring.closed",
                     progress: Double(level) / 100.0,
-                    duration: 3.0
+                    duration: 3.5
                 )
                 triggerAlert(alert)
             } else {

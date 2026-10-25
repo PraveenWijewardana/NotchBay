@@ -45,6 +45,8 @@
 		B10000200000000000000020 /* DynamicIsland/Models/CallModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000200000000000000020 /* DynamicIsland/Models/CallModel.swift */; };
 		B10000210000000000000021 /* DynamicIsland/Services/CallService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000210000000000000021 /* DynamicIsland/Services/CallService.swift */; };
 		B10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift */; };
+		B10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift */; };
+		B10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift */; };
 		B10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */; };
 		B10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */; };
 		B4C4327303CE434EAB345253 /* DynamicIsland/Models/NetworkStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802FE31A1BF4402BAE75C37C /* DynamicIsland/Models/NetworkStats.swift */; };
@@ -94,6 +96,8 @@
 		A10000200000000000000020 /* DynamicIsland/Models/CallModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/CallModel.swift; sourceTree = "<group>"; };
 		A10000210000000000000021 /* DynamicIsland/Services/CallService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/CallService.swift; sourceTree = "<group>"; };
 		A10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Call/CallIslandBannerView.swift; sourceTree = "<group>"; };
+		A10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/ClipboardService.swift; sourceTree = "<group>"; };
+		A10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/FileTransferService.swift; sourceTree = "<group>"; };
 		A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DynamicIsland/Resources/Assets.xcassets; sourceTree = "<group>"; };
 		A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = DynamicIsland/Resources/AppIcon.icns; sourceTree = "<group>"; };
 		ABC3483D808345EDB51EBDBE /* DynamicIsland/Views/Components/SparklineChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Components/SparklineChart.swift; sourceTree = "<group>"; };
@@ -179,6 +183,8 @@
 				A10000200000000000000020 /* DynamicIsland/Models/CallModel.swift */,
 				A10000210000000000000021 /* DynamicIsland/Services/CallService.swift */,
 				A10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift */,
+				A10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift */,
+				A10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift */,
 				CF0FF6B1B56A4939A03E202F /* DynamicIsland/Resources/Info.plist */,
 				2F9A925691A941BE830067FF /* DynamicIsland/Resources/DynamicIsland.entitlements */,
 				A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */,
@@ -298,6 +304,8 @@
 				B10000200000000000000020 /* DynamicIsland/Models/CallModel.swift in Sources */,
 				B10000210000000000000021 /* DynamicIsland/Services/CallService.swift in Sources */,
 				B10000220000000000000022 /* DynamicIsland/Views/Call/CallIslandBannerView.swift in Sources */,
+				B10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift in Sources */,
+				B10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

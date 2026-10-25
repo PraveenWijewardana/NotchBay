@@ -21,14 +21,61 @@ public struct IslandHUDView: View {
                     .foregroundColor(.white)
                     .lineLimit(1)
             }
-            .frame(width: 115, alignment: .leading)
+            .frame(width: 120, alignment: .leading)
             .padding(.leading, 12)
             
             Spacer(minLength: max(180, viewModel.physicalNotchWidth + 8)) // Hardware camera notch cutout clearance
             
-            // Right Ear: Progress Level, Subtitle, or Interactive Action Buttons (Approve / Deny)
+            // Right Ear: Progress Level, Subtitle, or Interactive Action Buttons (Approve / Deny / Transfer)
             Group {
                 switch alert.type {
+                case .magSafe(let level, _, _):
+                    // Apple MagSafe Neon Charging Ring
+                    HStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .stroke(Color.white.opacity(0.18), lineWidth: 2.2)
+                                .frame(width: 20, height: 20)
+                            Circle()
+                                .trim(from: 0, to: CGFloat(level) / 100.0)
+                                .stroke(Color.green, style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+                                .rotationEffect(.degrees(-90))
+                                .frame(width: 20, height: 20)
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 8.5, weight: .bold))
+                                .foregroundColor(.green)
+                        }
+                        Text("\(level)%")
+                            .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.green)
+                    }
+                    
+                case .fileTransfer(_, let progress, let isAirDrop, let isCompleted):
+                    HStack(spacing: 6) {
+                        if isCompleted {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.green)
+                            Text("Received")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundColor(.green)
+                        } else {
+                            ZStack {
+                                Circle()
+                                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                                    .frame(width: 18, height: 18)
+                                Circle()
+                                    .trim(from: 0, to: CGFloat(progress))
+                                    .stroke(isAirDrop ? Color.cyan : Color.blue, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                                    .rotationEffect(.degrees(-90))
+                                    .frame(width: 18, height: 18)
+                            }
+                            Text("\(Int(progress * 100))%")
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                .foregroundColor(isAirDrop ? .cyan : .blue)
+                        }
+                    }
+                    
                 case .agentPermission(_, let reqId, _):
                     // Interactive Action Buttons right inside the Notch HUD
                     HStack(spacing: 6) {
@@ -96,16 +143,20 @@ public struct IslandHUDView: View {
                     }
                 }
             }
-            .frame(width: 115, alignment: .trailing)
+            .frame(width: 120, alignment: .trailing)
             .padding(.trailing, 12)
         }
         .frame(height: 46)
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                viewModel.state = .expanded
-                if case .agentPermission = alert.type {
+                if case .fileTransfer = alert.type {
+                    viewModel.fileTransferService.openFileInFinder()
+                } else if case .agentPermission = alert.type {
+                    viewModel.state = .expanded
                     viewModel.selectedPageIndex = 5 // Jump directly to Agent tab!
+                } else {
+                    viewModel.state = .expanded
                 }
             }
         }
@@ -115,6 +166,26 @@ public struct IslandHUDView: View {
     @ViewBuilder
     private var iconView: some View {
         switch alert.type {
+        case .magSafe:
+            ZStack {
+                Circle()
+                    .fill(Color.green.opacity(0.25))
+                    .frame(width: 22, height: 22)
+                Image(systemName: "bolt.ring.closed")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.green)
+            }
+            
+        case .fileTransfer(_, _, let isAirDrop, let isCompleted):
+            ZStack {
+                Circle()
+                    .fill(isCompleted ? Color.green.opacity(0.25) : (isAirDrop ? Color.cyan.opacity(0.25) : Color.blue.opacity(0.25)))
+                    .frame(width: 22, height: 22)
+                Image(systemName: isCompleted ? "checkmark" : (isAirDrop ? "airdrop" : "arrow.down.circle.fill"))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(isCompleted ? .green : (isAirDrop ? .cyan : .blue))
+            }
+            
         case .volume(_, let isMuted):
             ZStack {
                 Circle()
@@ -180,6 +251,14 @@ public struct IslandHUDView: View {
     // MARK: - Colors & Gradients
     private var barGradient: LinearGradient {
         switch alert.type {
+        case .magSafe:
+            return LinearGradient(colors: [.green, Color(red: 0.2, green: 0.95, blue: 0.5)], startPoint: .leading, endPoint: .trailing)
+            
+        case .fileTransfer(_, _, let isAirDrop, _):
+            return isAirDrop
+                ? LinearGradient(colors: [.cyan, .blue], startPoint: .leading, endPoint: .trailing)
+                : LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
+            
         case .volume(_, let isMuted):
             if isMuted {
                 return LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
@@ -212,6 +291,10 @@ public struct IslandHUDView: View {
     
     private var subtitleColor: Color {
         switch alert.type {
+        case .magSafe:
+            return .green
+        case .fileTransfer(_, _, let isAirDrop, let isCompleted):
+            return isCompleted ? .green : (isAirDrop ? .cyan : .blue)
         case .volume(_, let isMuted):
             return isMuted ? .red : .white
         case .battery(let level, let isCharging, _):

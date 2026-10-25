@@ -282,6 +282,7 @@ public final class SystemMonitorService: ObservableObject {
         let powerSourceState = desc[kIOPSPowerSourceStateKey as String] as? String ?? "Battery Power"
         let isPluggedIn = powerSourceState == (kIOPSACPowerValue as String)
         let timeToEmpty = desc[kIOPSTimeToEmptyKey as String] as? Int ?? -1
+        let timeToFull = desc[kIOPSTimeToFullChargeKey as String] as? Int ?? -1
         
         let thermalState: String
         switch ProcessInfo.processInfo.thermalState {
@@ -298,6 +299,7 @@ public final class SystemMonitorService: ObservableObject {
             isPluggedIn: isPluggedIn,
             powerSourceState: powerSourceState,
             timeToEmptyMinutes: timeToEmpty,
+            timeToFullMinutes: timeToFull,
             thermalState: thermalState,
             isLowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled
         )

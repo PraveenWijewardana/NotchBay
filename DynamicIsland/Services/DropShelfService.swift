@@ -11,6 +11,7 @@ public final class DropShelfService: ObservableObject {
     @Published public var copiedItemId: UUID? = nil
     @Published public var hoveredItemId: UUID? = nil
     @Published public var toastMessage: String? = nil
+    @Published public var activeSubTab: Int = 0 // 0: Drop Shelf, 1: Clipboard History
     
     public var filteredItems: [ShelfItem] {
         if selectedFilter == .all {

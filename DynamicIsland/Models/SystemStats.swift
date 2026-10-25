@@ -120,6 +120,7 @@ public struct PowerMetrics: Sendable {
     public var isPluggedIn: Bool = true
     public var powerSourceState: String = "Battery Power"
     public var timeToEmptyMinutes: Int = -1
+    public var timeToFullMinutes: Int = -1
     public var thermalState: String = "Cool"
     public var isLowPowerMode: Bool = false
     

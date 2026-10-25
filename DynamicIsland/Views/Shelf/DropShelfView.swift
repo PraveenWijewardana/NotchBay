@@ -13,64 +13,353 @@ public struct DropShelfView: View {
     
     public var body: some View {
         VStack(spacing: 8) {
-            // MARK: - Top Filter & Action Bar
-            topFilterBar
+            // MARK: - SubTab Switcher (Drop Shelf vs. Clipboard History)
+            subTabBar
                 .padding(.horizontal, 4)
             
-            // MARK: - Cards Zone / Drop Target
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(
-                        shelfService.isTargeted ? Color.yellow : Color.white.opacity(0.12),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                    )
-                    .background(
+            if shelfService.activeSubTab == 0 {
+                // Drop Shelf View Mode
+                VStack(spacing: 8) {
+                    topFilterBar
+                        .padding(.horizontal, 4)
+                    
+                    // Cards Zone / Drop Target
+                    ZStack {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(shelfService.isTargeted ? Color.yellow.opacity(0.08) : Color.white.opacity(0.02))
-                    )
-                
-                if shelfService.filteredItems.isEmpty {
-                    emptyShelfView
-                } else {
-                    cardsScrollView
-                }
-            }
-            .frame(height: 146)
-            .onDrop(of: [.fileURL, .text, .image], isTargeted: Binding(
-                get: { shelfService.isTargeted },
-                set: { shelfService.isTargeted = $0 }
-            )) { providers in
-                for provider in providers {
-                    if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                        _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                            if let url = url {
-                                Task { @MainActor in
-                                    shelfService.addFile(url: url)
-                                }
-                            }
-                        }
-                    } else if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                        _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
-                            if let data = data {
-                                Task { @MainActor in
-                                    let formatter = DateFormatter()
-                                    formatter.dateFormat = "HH.mm.ss"
-                                    shelfService.addImage(data: data, name: "Dropped Image \(formatter.string(from: Date())).png")
-                                }
-                            }
-                        }
-                    } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-                        _ = provider.loadObject(ofClass: String.self) { text, _ in
-                            if let text = text {
-                                Task { @MainActor in
-                                    shelfService.addText(text)
-                                }
-                            }
+                            .strokeBorder(
+                                shelfService.isTargeted ? Color.yellow : Color.white.opacity(0.12),
+                                style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                            )
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(shelfService.isTargeted ? Color.yellow.opacity(0.08) : Color.white.opacity(0.02))
+                            )
+                        
+                        if shelfService.filteredItems.isEmpty {
+                            emptyShelfView
+                        } else {
+                            cardsScrollView
                         }
                     }
+                    .frame(height: 142)
+                    .onDrop(of: [.fileURL, .text, .image], isTargeted: Binding(
+                        get: { shelfService.isTargeted },
+                        set: { shelfService.isTargeted = $0 }
+                    )) { providers in
+                        for provider in providers {
+                            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                                    if let url = url {
+                                        Task { @MainActor in
+                                            shelfService.addFile(url: url)
+                                        }
+                                    }
+                                }
+                            } else if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                                _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                                    if let data = data {
+                                        Task { @MainActor in
+                                            let formatter = DateFormatter()
+                                            formatter.dateFormat = "HH.mm.ss"
+                                            shelfService.addImage(data: data, name: "Dropped Image \(formatter.string(from: Date())).png")
+                                        }
+                                    }
+                                }
+                            } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                                _ = provider.loadObject(ofClass: String.self) { text, _ in
+                                    if let text = text {
+                                        Task { @MainActor in
+                                            shelfService.addText(text)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return true
+                    }
                 }
-                return true
+            } else {
+                // Clipboard History View Mode
+                clipboardHistoryContent
             }
+        }
+    }
+    
+    // MARK: - SubTab Switcher (Drop Shelf vs. Clipboard History)
+    private var subTabBar: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 3) {
+                // Drop Shelf Pill Button
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        shelfService.activeSubTab = 0
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "tray.fill")
+                            .font(.system(size: 9.5, weight: .bold))
+                        Text("Drop Shelf")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                        if !shelfService.items.isEmpty {
+                            Text("\(shelfService.items.count)")
+                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                .padding(.horizontal, 4.5)
+                                .padding(.vertical, 1)
+                                .background(Color.yellow.opacity(0.3))
+                                .foregroundColor(.yellow)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .foregroundColor(shelfService.activeSubTab == 0 ? .white : .white.opacity(0.55))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4.5)
+                    .background(shelfService.activeSubTab == 0 ? Color.white.opacity(0.14) : Color.clear)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                
+                // Clipboard History Pill Button
+                Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        shelfService.activeSubTab = 1
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.on.clipboard.fill")
+                            .font(.system(size: 9.5, weight: .bold))
+                        Text("Clipboard")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                        if !viewModel.clipboardService.items.isEmpty {
+                            Text("\(viewModel.clipboardService.items.count)")
+                                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                .padding(.horizontal, 4.5)
+                                .padding(.vertical, 1)
+                                .background(Color.cyan.opacity(0.3))
+                                .foregroundColor(.cyan)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .foregroundColor(shelfService.activeSubTab == 1 ? .white : .white.opacity(0.55))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4.5)
+                    .background(shelfService.activeSubTab == 1 ? Color.cyan.opacity(0.2) : Color.clear)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(2.5)
+            .background(Color.white.opacity(0.06))
+            .clipShape(Capsule())
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Clipboard History View Mode
+    private var clipboardHistoryContent: some View {
+        VStack(spacing: 7) {
+            // Filter Pills & Clear Row
+            HStack(spacing: 6) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 4) {
+                        clipboardFilterPill(type: nil, title: "All (\(viewModel.clipboardService.items.count))")
+                        clipboardFilterPill(type: .code, title: "Code", icon: "curlybraces")
+                        clipboardFilterPill(type: .url, title: "Links", icon: "link")
+                        clipboardFilterPill(type: .text, title: "Text", icon: "doc.text.fill")
+                        clipboardFilterPill(type: .color, title: "Colors", icon: "paintpalette.fill")
+                        clipboardFilterPill(type: .image, title: "Images", icon: "photo.fill")
+                    }
+                }
+                
+                Spacer(minLength: 4)
+                
+                if !viewModel.clipboardService.items.isEmpty {
+                    Button {
+                        viewModel.clipboardService.clearAll()
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: "trash")
+                                .font(.system(size: 8.5))
+                            Text("Clear")
+                                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        }
+                        .foregroundColor(.white.opacity(0.6))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.white.opacity(0.08))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Clear Clipboard History")
+                }
+            }
+            .padding(.horizontal, 4)
+            
+            // Clipboard Cards Zone (Strictly matches 142pt height limit)
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color.white.opacity(0.02))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                    )
+                
+                if viewModel.clipboardService.filteredItems.isEmpty {
+                    VStack(spacing: 6) {
+                        Image(systemName: "doc.on.clipboard")
+                            .font(.system(size: 24))
+                            .foregroundColor(.white.opacity(0.35))
+                        Text("No Copied Items")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                        Text("Copy text, code, or images with ⌘C to view them here")
+                            .font(.system(size: 10, design: .rounded))
+                            .foregroundColor(.white.opacity(0.35))
+                    }
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 9) {
+                            ForEach(viewModel.clipboardService.filteredItems) { item in
+                                clipboardItemCard(item: item)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                    }
+                }
+            }
+            .frame(height: 142)
+        }
+    }
+    
+    private func clipboardFilterPill(type: ClipboardItemType?, title: String, icon: String? = nil) -> some View {
+        let isSelected = viewModel.clipboardService.selectedFilter == type
+        return Button {
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                viewModel.clipboardService.selectedFilter = type
+            }
+        } label: {
+            HStack(spacing: 3) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 8.5))
+                }
+                Text(title)
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .rounded))
+            }
+            .foregroundColor(isSelected ? .black : .white.opacity(0.75))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3.5)
+            .background(isSelected ? Color.cyan : Color.white.opacity(0.08))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func clipboardItemCard(item: ClipboardItem) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Header: Type badge + Time ago + Delete
+            HStack(alignment: .center, spacing: 4) {
+                HStack(spacing: 3) {
+                    Image(systemName: item.type.iconName)
+                        .font(.system(size: 8.5, weight: .bold))
+                    Text(item.type.rawValue.uppercased())
+                        .font(.system(size: 8, weight: .heavy, design: .rounded))
+                }
+                .foregroundColor(badgeColor(for: item.type))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 2)
+                .background(badgeColor(for: item.type).opacity(0.18))
+                .clipShape(Capsule())
+                
+                Spacer()
+                
+                Text(item.timeAgoFormatted)
+                    .font(.system(size: 8.5, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.4))
+                
+                Button {
+                    viewModel.clipboardService.deleteItem(id: item.id)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(.white.opacity(0.35))
+                        .padding(2)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Content Preview Box
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.white.opacity(0.05))
+                
+                if item.type == .image, let data = item.imageData, let img = NSImage(data: data) {
+                    Image(nsImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                } else if item.type == .color {
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(colorFromHex(item.textContent))
+                            .frame(width: 24, height: 24)
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                        Text(item.textContent)
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                    }
+                    .padding(8)
+                } else {
+                    Text(item.preview)
+                        .font(item.type == .code ? .system(size: 10, weight: .medium, design: .monospaced) : .system(size: 10.5, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.85))
+                        .lineLimit(3)
+                        .padding(6)
+                }
+            }
+            .frame(height: 58)
+            
+            // Bottom Action: 1-Click Copy Button
+            Button {
+                viewModel.clipboardService.copyToPasteboard(item)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.on.doc.fill")
+                        .font(.system(size: 8.5, weight: .bold))
+                    Text("Copy")
+                        .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                }
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.9))
+                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(8)
+        .frame(width: 140, height: 126)
+        .background(Color(white: 0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
+        .onDrag {
+            NSItemProvider(object: item.textContent as NSString)
+        }
+    }
+    
+    private func badgeColor(for type: ClipboardItemType) -> Color {
+        switch type {
+        case .text: return Color.white
+        case .code: return Color.yellow
+        case .url: return Color.cyan
+        case .color: return Color(red: 1.0, green: 0.35, blue: 0.6)
+        case .image: return Color.orange
         }
     }
     
