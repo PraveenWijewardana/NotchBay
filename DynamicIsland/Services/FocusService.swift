@@ -96,6 +96,10 @@ public final class FocusService: ObservableObject {
     
     public var onFocusChanged: ((Bool, String, String) -> Void)?
     
+    // User Session tracking to keep focus active in NotchBay even when no shortcut is installed
+    @Published public var isUserSessionActive: Bool = false
+    private var lastSystemAssertionState: Bool = false
+    
     private var monitoringTimer: Timer?
     private var countdownTimer: Timer?
     private var isRefreshing: Bool = false
@@ -160,20 +164,27 @@ public final class FocusService: ObservableObject {
         var newMode: AppleFocusMode? = nil
         
         if hasActiveAssertion {
+            // macOS system has an active Focus mode confirmed
+            self.lastSystemAssertionState = true
             newIsActive = true
             if let modeId = activeModeId {
                 newMode = matchMode(for: modeId)
             } else {
-                newMode = lastKnownActiveMode
+                newMode = self.activeMode ?? lastKnownActiveMode
             }
         } else {
-            // Step 2: Fallback to Apple Intents INFocusStatusCenter
-            let intentsStatus = checkIntentsFocusStatus()
-            if let isFocused = intentsStatus {
-                newIsActive = isFocused
-                if isFocused {
-                    newMode = activeMode ?? lastKnownActiveMode
-                }
+            // macOS system has NO active assertion
+            if lastSystemAssertionState == true {
+                // System focus was previously active and was turned off externally in macOS
+                self.lastSystemAssertionState = false
+                self.isUserSessionActive = false
+                newIsActive = false
+            } else if isUserSessionActive {
+                // User started a session inside NotchBay, keep it alive
+                newIsActive = true
+                newMode = self.activeMode ?? lastKnownActiveMode
+            } else {
+                newIsActive = false
             }
         }
         
@@ -188,7 +199,7 @@ public final class FocusService: ObservableObject {
             self.activeMode = mode
             self.activeModeName = mode.name
             self.activeModeIcon = mode.iconName
-            self.statusSubtitle = "Apple Focus • On"
+            self.statusSubtitle = hasActiveAssertion ? "Apple Focus • On" : "Focus Mode • On"
             self.lastKnownActiveMode = mode
         } else {
             self.activeMode = nil
@@ -205,32 +216,26 @@ public final class FocusService: ObservableObject {
     // MARK: - Apple Focus Mode Control (Sync with Apple)
     public func setAppleFocus(mode: AppleFocusMode) {
         // Immediate UI responsiveness
+        self.isUserSessionActive = true
         self.isAppleFocusActive = true
         self.isActive = true
         self.activeMode = mode
         self.activeModeName = mode.name
         self.activeModeIcon = mode.iconName
-        self.statusSubtitle = "Apple Focus • On"
+        self.statusSubtitle = "Focus Mode • On"
         self.lastKnownActiveMode = mode
         
         UserDefaults.standard.set(mode.id, forKey: "notchbay.last_focus_mode_id")
         UserDefaults.standard.set(mode.name, forKey: "notchbay.last_focus_mode_name")
         
-        // Execute system command
+        // Execute system command safely without stderr noise
         executeSystemFocusChange(mode: mode, activate: true)
         
         onFocusChanged?(true, mode.name, "Active")
-        
-        // Verify state after slight system delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            self?.refreshFocusState()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
-            self?.refreshFocusState()
-        }
     }
     
     public func turnOffAppleFocus() {
+        self.isUserSessionActive = false
         self.isAppleFocusActive = false
         self.isActive = false
         self.activeMode = nil
@@ -241,13 +246,6 @@ public final class FocusService: ObservableObject {
         executeSystemFocusChange(mode: lastKnownActiveMode, activate: false)
         
         onFocusChanged?(false, "Focus Off", "Turned Off")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            self?.refreshFocusState()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) { [weak self] in
-            self?.refreshFocusState()
-        }
     }
     
     public func toggleAppleFocus() {
@@ -268,58 +266,33 @@ public final class FocusService: ObservableObject {
         }
     }
     
+    public func openShortcutsApp() {
+        if let url = URL(string: "shortcuts:") {
+            NSWorkspace.shared.open(url)
+        } else {
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Shortcuts.app"))
+        }
+    }
+    
     // MARK: - System Execution Helpers
     private func executeSystemFocusChange(mode: AppleFocusMode, activate: Bool) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            // Attempt 1: Run Shortcuts CLI
-            let candidateShortcuts: [String]
-            if activate {
-                candidateShortcuts = [
-                    "Set Focus \(mode.name)",
-                    "Turn On \(mode.name)",
-                    mode.name,
-                    "Turn On Do Not Disturb",
-                    "Toggle Focus",
-                    "Set Focus"
-                ]
-            } else {
-                candidateShortcuts = [
-                    "Turn Off Focus",
-                    "Turn Off \(mode.name)",
-                    "Turn Off Do Not Disturb",
-                    "Focus Off",
-                    "Toggle Focus"
-                ]
-            }
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
             
+            // 1. Check installed shortcuts silently (with standardError suppressed)
+            let installed = self.getInstalledShortcuts()
             var didSucceed = false
-            for shortcut in candidateShortcuts {
-                let task = Process()
-                task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
-                task.arguments = ["run", shortcut]
-                do {
-                    try task.run()
-                    task.waitUntilExit()
-                    if task.terminationStatus == 0 {
-                        didSucceed = true
-                        break
-                    }
-                } catch {
-                    continue
-                }
+            
+            if let matched = self.findShortcut(matching: mode, activate: activate, available: installed) {
+                didSucceed = self.runShortcut(named: matched)
             }
             
-            // Attempt 2: AppleScript Shortcuts Events
+            // 2. If no shortcut matched, attempt AppleScript UI script on Control Center
             if !didSucceed {
-                let scriptName = activate ? mode.name : "Turn Off Focus"
-                let script = "tell application \"Shortcuts Events\" to try\nrun shortcut \"\(scriptName)\"\nend try"
-                if let appleScript = NSAppleScript(source: script) {
-                    var errorDict: NSDictionary?
-                    appleScript.executeAndReturnError(&errorDict)
-                }
+                didSucceed = self.triggerControlCenterFocus()
             }
             
-            // Post Distributed Notification
+            // 3. Post Distributed Notification
             DispatchQueue.main.async {
                 DistributedNotificationCenter.default().postNotificationName(
                     NSNotification.Name("com.apple.notificationcenterui.dndprefs_changed"),
@@ -329,6 +302,117 @@ public final class FocusService: ObservableObject {
                 )
             }
         }
+    }
+    
+    private func getInstalledShortcuts() -> [String] {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
+        task.arguments = ["list"]
+        let stdout = Pipe()
+        task.standardOutput = stdout
+        task.standardError = Pipe() // Silence any stderr
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = stdout.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8) {
+                return output.components(separatedBy: .newlines)
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+            }
+        } catch {}
+        return []
+    }
+    
+    private func findShortcut(matching mode: AppleFocusMode, activate: Bool, available: [String]) -> String? {
+        let modeName = mode.name.lowercased()
+        
+        let candidates: [String] = activate ? [
+            "set focus \(modeName)",
+            "turn on \(modeName)",
+            "enable \(modeName)",
+            modeName,
+            "turn on focus",
+            "set focus",
+            "toggle focus",
+            "focus",
+            "turn on do not disturb",
+            "do not disturb",
+            "dnd"
+        ] : [
+            "turn off \(modeName)",
+            "disable \(modeName)",
+            "turn off focus",
+            "focus off",
+            "disable focus",
+            "toggle focus",
+            "turn off do not disturb",
+            "do not disturb",
+            "dnd"
+        ]
+        
+        for candidate in candidates {
+            if let match = available.first(where: { $0.lowercased() == candidate }) {
+                return match
+            }
+        }
+        
+        if let match = available.first(where: { $0.lowercased().contains(modeName) }) {
+            return match
+        }
+        
+        if let match = available.first(where: { $0.lowercased().contains("focus") || $0.lowercased().contains("dnd") }) {
+            return match
+        }
+        
+        return nil
+    }
+    
+    @discardableResult
+    private func runShortcut(named shortcut: String) -> Bool {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
+        task.arguments = ["run", shortcut]
+        task.standardOutput = Pipe()
+        task.standardError = Pipe() // Silence any errors
+        do {
+            try task.run()
+            task.waitUntilExit()
+            return task.terminationStatus == 0
+        } catch {
+            return false
+        }
+    }
+    
+    @discardableResult
+    private func triggerControlCenterFocus() -> Bool {
+        let script = """
+        tell application "System Events"
+            tell process "ControlCenter"
+                try
+                    click (first menu bar item of menu bar 1 whose description contains "Focus" or description contains "Do Not Disturb")
+                    return true
+                on error
+                    try
+                        click menu bar item "Control Center" of menu bar 1
+                        delay 0.15
+                        click (first checkbox of group 1 of window 1 whose title contains "Focus" or description contains "Focus")
+                        delay 0.1
+                        key code 53
+                        return true
+                    on error
+                        return false
+                    end try
+                end try
+            end tell
+        end tell
+        """
+        if let appleScript = NSAppleScript(source: script) {
+            var errorDict: NSDictionary?
+            let result = appleScript.executeAndReturnError(&errorDict)
+            return errorDict == nil && result.booleanValue
+        }
+        return false
     }
     
     // MARK: - Database Inspection Helpers

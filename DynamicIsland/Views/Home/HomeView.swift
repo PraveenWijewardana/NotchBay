@@ -604,6 +604,12 @@ public struct HomeView: View {
                 } label: {
                     Label("Focus Settings...", systemImage: "gearshape")
                 }
+                
+                Button {
+                    focusService.openShortcutsApp()
+                } label: {
+                    Label("Shortcuts App...", systemImage: "square.stack.3d.up.fill")
+                }
             } label: {
                 Image(systemName: focusService.isAppleFocusActive ? "checkmark" : "chevron.up.chevron.down")
                     .font(.system(size: 8.5, weight: .bold))
