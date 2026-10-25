@@ -526,7 +526,7 @@ public final class CallService: ObservableObject {
         ]
         
         // 1. Check window title
-        var cleanTitle = windowTitle
+        let cleanTitle = windowTitle
             .replacingOccurrences(of: "WhatsApp Call with ", with: "")
             .replacingOccurrences(of: "WhatsApp Call", with: "")
             .replacingOccurrences(of: "FaceTime with ", with: "")
@@ -707,18 +707,26 @@ public final class CallService: ObservableObject {
     private func activateCallApp(for call: ActiveCallSession) {
         if let pid = call.appPID ?? cachedCallingPID,
            let app = NSWorkspace.shared.runningApplications.first(where: { $0.processIdentifier == pid }) {
-            app.activate(options: .activateIgnoringOtherApps)
+            bringAppToFront(app)
             return
         }
         
         if call.category.appType == .whatsApp {
             if let wa = NSWorkspace.shared.runningApplications.first(where: { ($0.bundleIdentifier ?? "").lowercased().contains("whatsapp") }) {
-                wa.activate(options: .activateIgnoringOtherApps)
+                bringAppToFront(wa)
             }
         } else {
             if let ft = NSWorkspace.shared.runningApplications.first(where: { ($0.bundleIdentifier ?? "").lowercased().contains("facetime") || ($0.bundleIdentifier ?? "").lowercased().contains("callservices") }) {
-                ft.activate(options: .activateIgnoringOtherApps)
+                bringAppToFront(ft)
             }
+        }
+    }
+    
+    private func bringAppToFront(_ app: NSRunningApplication) {
+        if #available(macOS 14.0, *) {
+            app.activate()
+        } else {
+            app.activate(options: .activateIgnoringOtherApps)
         }
     }
     

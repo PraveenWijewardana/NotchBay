@@ -29,7 +29,7 @@ public struct IslandHUDView: View {
             // Right Ear: Progress Level, Subtitle, or Interactive Action Buttons (Approve / Deny / Transfer)
             Group {
                 switch alert.type {
-                case .battery(let level, let isCharging, let isPluggedIn):
+                case .battery(let level, let isCharging, _):
                     // Dedicated Apple-style Battery HUD Ear
                     HStack(spacing: 5) {
                         Text("\(level)%")
