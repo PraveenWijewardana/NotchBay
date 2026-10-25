@@ -262,8 +262,8 @@ public final class SystemHUDService: ObservableObject {
             } else {
                 let alert = HUDAlert(
                     type: .battery(level: level, isCharging: false, isPluggedIn: false),
-                    title: "Power Disconnected",
-                    subtitle: "\(level)% on Battery",
+                    title: "On Battery",
+                    subtitle: "\(level)% Remaining",
                     icon: "battery.50",
                     progress: Double(level) / 100.0,
                     duration: 3.0
@@ -277,7 +277,7 @@ public final class SystemHUDService: ObservableObject {
             let alert = HUDAlert(
                 type: .battery(level: 100, isCharging: false, isPluggedIn: true),
                 title: "Fully Charged",
-                subtitle: "100% Complete",
+                subtitle: "100% Full",
                 icon: "battery.100.bolt",
                 progress: 1.0,
                 duration: 3.5
@@ -289,11 +289,11 @@ public final class SystemHUDService: ObservableObject {
         if level == 50 && previousBatteryLevel != 50 && !plugged {
             let alert = HUDAlert(
                 type: .battery(level: 50, isCharging: false, isPluggedIn: false),
-                title: "Battery at 50%",
+                title: "Battery 50%",
                 subtitle: metrics.timeToEmptyMinutes > 0 ? "\(metrics.timeToEmptyMinutes / 60)h left" : "Half Power",
                 icon: "battery.50",
                 progress: 0.50,
-                duration: 3.0
+                duration: 3.5
             )
             triggerAlert(alert)
         }

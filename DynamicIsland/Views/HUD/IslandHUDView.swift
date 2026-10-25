@@ -13,22 +13,33 @@ public struct IslandHUDView: View {
     public var body: some View {
         HStack(spacing: 0) {
             // Left Ear: Icon + Title
-            HStack(spacing: 7) {
+            HStack(spacing: 6) {
                 iconView
                 
                 Text(alert.title)
-                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .lineLimit(1)
             }
-            .frame(width: 120, alignment: .leading)
+            .frame(width: 110, alignment: .leading)
             .padding(.leading, 12)
             
-            Spacer(minLength: max(180, viewModel.physicalNotchWidth + 8)) // Hardware camera notch cutout clearance
+            Spacer(minLength: max(180, viewModel.physicalNotchWidth + 12)) // Hardware camera notch cutout clearance
             
             // Right Ear: Progress Level, Subtitle, or Interactive Action Buttons (Approve / Deny / Transfer)
             Group {
                 switch alert.type {
+                case .battery(let level, let isCharging, let isPluggedIn):
+                    // Dedicated Apple-style Battery HUD Ear
+                    HStack(spacing: 5) {
+                        Text("\(level)%")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundColor(level <= 20 ? .red : (level <= 50 ? .yellow : .green))
+                        
+                        Image(systemName: isCharging ? "battery.100.bolt" : (level <= 20 ? "battery.25" : (level <= 50 ? "battery.50" : "battery.100")))
+                            .font(.system(size: 12.5, weight: .semibold))
+                            .foregroundColor(level <= 20 ? .red : (level <= 50 ? .yellow : .green))
+                    }
                 case .magSafe(let level, _, _):
                     // Apple MagSafe Neon Charging Ring
                     HStack(spacing: 6) {
@@ -168,10 +179,10 @@ public struct IslandHUDView: View {
                     }
                 }
             }
-            .frame(width: 120, alignment: .trailing)
+            .frame(width: 110, alignment: .trailing)
             .padding(.trailing, 12)
         }
-        .frame(height: 46)
+        .frame(height: max(viewModel.physicalNotchHeight + 8.0, 44))
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
@@ -222,14 +233,14 @@ public struct IslandHUDView: View {
                     .foregroundColor(isMuted ? .red : .cyan)
             }
             
-        case .battery(_, let isCharging, _):
+        case .battery(let level, let isCharging, _):
             ZStack {
                 Circle()
-                    .fill(isCharging ? Color.green.opacity(0.2) : Color.yellow.opacity(0.2))
+                    .fill(isCharging ? Color.green.opacity(0.2) : (level <= 20 ? Color.red.opacity(0.2) : Color.yellow.opacity(0.2)))
                     .frame(width: 22, height: 22)
                 Image(systemName: alert.icon)
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(isCharging ? .green : .yellow)
+                    .foregroundColor(isCharging ? .green : (level <= 20 ? .red : .yellow))
             }
             
         case .track:
