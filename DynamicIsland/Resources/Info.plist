@@ -32,6 +32,16 @@
     <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>NotchBay uses Apple Events to control music playback and show artwork from Spotify and Apple Music.</string>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>NotchBay displays your upcoming events, meetings, and schedule in the Dynamic Island.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>NotchBay displays your upcoming events, meetings, and schedule in the Dynamic Island.</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>NotchBay displays your tasks and reminders in the Dynamic Island.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>NotchBay displays your tasks and reminders in the Dynamic Island.</string>
+    <key>NSFocusStatusUsageDescription</key>
+    <string>NotchBay displays and synchronizes your current Apple Focus mode.</string>
     <key>NSContactsUsageDescription</key>
     <string>NotchBay matches incoming calls to your Contacts to display real caller names and photos in Dynamic Island.</string>
     <key>NSScreenCaptureUsageDescription</key>

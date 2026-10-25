@@ -402,9 +402,7 @@ public final class FocusService: ObservableObject {
     
     private func checkIntentsFocusStatus() -> Bool? {
         let center = INFocusStatusCenter.default
-        if center.authorizationStatus == .notDetermined {
-            center.requestAuthorization { _ in }
-        }
+        guard center.authorizationStatus == .authorized else { return nil }
         return center.focusStatus.isFocused
     }
     
