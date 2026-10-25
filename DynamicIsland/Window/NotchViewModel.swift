@@ -254,11 +254,12 @@ public final class NotchViewModel: ObservableObject {
         // Wire up Focus Mode HUD alerts
         focusService.onFocusChanged = { [weak self] (isActive, sessionTitle, duration) in
             guard let self = self else { return }
+            let icon = isActive ? self.focusService.activeModeIcon : "moon.slash.fill"
             let alert = HUDAlert(
                 type: .focus(isActive: isActive, sessionTitle: sessionTitle, duration: duration),
-                title: isActive ? "Focus Mode" : "Focus Ended",
-                subtitle: isActive ? "\(sessionTitle) • \(duration)" : "\(sessionTitle) • \(duration)",
-                icon: isActive ? "moon.fill" : "checkmark.circle.fill",
+                title: isActive ? "Apple Focus" : "Focus Off",
+                subtitle: isActive ? "\(sessionTitle) • Active" : "Focus Ended",
+                icon: icon,
                 duration: 2.5
             )
             self.presentHUD(alert)

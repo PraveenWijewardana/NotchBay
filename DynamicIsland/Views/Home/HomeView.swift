@@ -514,100 +514,145 @@ public struct HomeView: View {
         .padding(.vertical, 8)
     }
     
-    // MARK: - Focus Mode Card Component
+    // MARK: - Focus Mode Card Component (Live Apple Focus Sync & Switcher)
     private var focusModeCard: some View {
         HStack(spacing: 7) {
-            // Glowing Moon / Brain Icon with subtle pulsing ring when active
+            // Glowing Mode Icon (Matches Apple Focus)
             ZStack {
                 Circle()
-                    .fill(focusService.isActive ? Color.purple.opacity(0.3) : Color.white.opacity(0.08))
-                    .frame(width: 26, height: 26)
+                    .fill(focusService.isAppleFocusActive ? Color(red: 0.55, green: 0.35, blue: 0.95).opacity(0.3) : Color.white.opacity(0.08))
+                    .frame(width: 25, height: 25)
                 
-                if focusService.isActive {
+                if focusService.isAppleFocusActive {
                     Circle()
                         .stroke(Color(red: 0.75, green: 0.55, blue: 1.0).opacity(0.6), lineWidth: 1.2)
-                        .frame(width: 26, height: 26)
+                        .frame(width: 25, height: 25)
                 }
                 
-                Image(systemName: focusService.isActive ? focusService.focusType.iconName : "moon.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(focusService.isActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.75))
+                Image(systemName: focusService.activeModeIcon)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundColor(focusService.isAppleFocusActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.75))
             }
             
-            // Title & Live Countdown / Status
+            // Title & Apple Focus Status
             VStack(alignment: .leading, spacing: 1) {
-                Text("Focus")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                Text(focusService.isAppleFocusActive ? focusService.activeModeName : "Focus Off")
+                    .font(.system(size: 11.5, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .lineLimit(1)
                 
                 HStack(spacing: 3) {
-                    if focusService.isActive {
+                    if focusService.isAppleFocusActive {
                         Circle()
                             .fill(Color(red: 0.75, green: 0.55, blue: 1.0))
                             .frame(width: 4, height: 4)
                     }
-                    Text(focusService.formattedRemainingTime)
-                        .font(.system(size: 10, weight: focusService.isActive ? .bold : .medium, design: focusService.isActive ? .monospaced : .rounded))
-                        .foregroundColor(focusService.isActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.5))
+                    Text(focusService.isAppleFocusActive ? "Apple Focus • On" : "Tap to Switch")
+                        .font(.system(size: 9.5, weight: focusService.isAppleFocusActive ? .bold : .medium, design: .rounded))
+                        .foregroundColor(focusService.isAppleFocusActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
             
             Spacer(minLength: 0)
             
-            // Action Button (Play / Stop)
-            Button {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
-                    focusService.toggleFocus()
+            // Mode Selector Menu / Quick Toggle
+            Menu {
+                Section("Apple Focus Modes") {
+                    ForEach(focusService.availableModes) { mode in
+                        Button {
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                                focusService.setAppleFocus(mode: mode)
+                            }
+                        } label: {
+                            HStack {
+                                Label(mode.name, systemImage: mode.iconName)
+                                if focusService.isAppleFocusActive && (focusService.activeMode?.id == mode.id || focusService.activeModeName == mode.name) {
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Divider()
+                
+                if focusService.isAppleFocusActive {
+                    Button(role: .destructive) {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                            focusService.turnOffAppleFocus()
+                        }
+                    } label: {
+                        Label("Turn Off Focus", systemImage: "moon.slash.fill")
+                    }
+                } else {
+                    Button {
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                            focusService.setAppleFocus(mode: focusService.lastKnownActiveMode)
+                        }
+                    } label: {
+                        Label("Turn On \(focusService.lastKnownActiveMode.name)", systemImage: focusService.lastKnownActiveMode.iconName)
+                    }
+                }
+                
+                Divider()
+                
+                Button {
+                    focusService.openFocusSettings()
+                } label: {
+                    Label("Focus Settings...", systemImage: "gearshape")
                 }
             } label: {
-                Image(systemName: focusService.isActive ? "stop.fill" : "play.fill")
-                    .font(.system(size: 9.5, weight: .bold))
-                    .foregroundColor(focusService.isActive ? .white : .black)
+                Image(systemName: focusService.isAppleFocusActive ? "checkmark" : "chevron.up.chevron.down")
+                    .font(.system(size: 8.5, weight: .bold))
+                    .foregroundColor(focusService.isAppleFocusActive ? .white : .white.opacity(0.75))
                     .frame(width: 20, height: 20)
-                    .background(focusService.isActive ? Color.purple : Color.white)
+                    .background(focusService.isAppleFocusActive ? Color.purple : Color.white.opacity(0.12))
                     .clipShape(Circle())
             }
-            .buttonStyle(.plain)
+            .menuStyle(.borderlessButton)
+            .help("Choose Apple Focus Mode")
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 5)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(focusService.isActive ? Color.purple.opacity(0.2) : Color.white.opacity(0.06))
+                .fill(focusService.isAppleFocusActive ? Color.purple.opacity(0.2) : Color.white.opacity(0.06))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(focusService.isActive ? Color.purple.opacity(0.5) : Color.white.opacity(0.12), lineWidth: 0.8)
+                .stroke(focusService.isAppleFocusActive ? Color.purple.opacity(0.5) : Color.white.opacity(0.12), lineWidth: 0.8)
         )
         .contentShape(Rectangle())
         .onTapGesture {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
-                focusService.toggleFocus()
+                focusService.toggleAppleFocus()
             }
         }
         .contextMenu {
-            Button("15 Minutes") {
-                focusService.startFocus(preset: .minutes15)
-            }
-            Button("25 Minutes (Pomodoro)") {
-                focusService.startFocus(preset: .minutes25)
-            }
-            Button("45 Minutes (Deep Work)") {
-                focusService.startFocus(preset: .minutes45)
-            }
-            Button("60 Minutes (Intense Focus)") {
-                focusService.startFocus(preset: .minutes60)
-            }
-            Button("Until Turned Off") {
-                focusService.startFocus(preset: .indefinite)
+            Section("Apple Focus Modes") {
+                ForEach(focusService.availableModes) { mode in
+                    Button {
+                        focusService.setAppleFocus(mode: mode)
+                    } label: {
+                        Label(mode.name, systemImage: mode.iconName)
+                    }
+                }
             }
             Divider()
-            Button("Open Focus & Timers Dashboard") {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                    viewModel.selectedPageIndex = 2
+            if focusService.isAppleFocusActive {
+                Button("Turn Off Focus") {
+                    focusService.turnOffAppleFocus()
                 }
+            } else {
+                Button("Turn On \(focusService.lastKnownActiveMode.name)") {
+                    focusService.setAppleFocus(mode: focusService.lastKnownActiveMode)
+                }
+            }
+            Divider()
+            Button("Open macOS Focus Settings") {
+                focusService.openFocusSettings()
             }
         }
     }

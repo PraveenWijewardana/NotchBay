@@ -147,12 +147,12 @@ public struct IslandHUDView: View {
                             .foregroundColor(.green)
                     }
                     
-                case .focus(let isActive, _, _):
+                case .focus(let isActive, let sessionTitle, _):
                     HStack(spacing: 5) {
-                        Image(systemName: isActive ? "moon.fill" : "moon.stars.fill")
+                        Image(systemName: alert.icon)
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(isActive ? Color(red: 0.75, green: 0.55, blue: 1.0) : .white)
-                        Text(isActive ? "Focus On" : "Focus Ended")
+                        Text(isActive ? sessionTitle : "Focus Off")
                             .font(.system(size: 11, weight: .bold, design: .rounded))
                             .foregroundColor(isActive ? Color(red: 0.75, green: 0.55, blue: 1.0) : .white)
                     }
