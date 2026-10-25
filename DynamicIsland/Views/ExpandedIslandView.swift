@@ -75,8 +75,9 @@ public struct ExpandedIslandView: View {
                                 .shadow(color: viewModel.caffeineService.isActive ? .orange.opacity(0.7) : .clear, radius: 2)
                             
                             if viewModel.caffeineService.isActive {
-                                Text(viewModel.caffeineService.selectedPreset.shortTitle)
+                                Text(viewModel.caffeineService.formattedRemainingTime)
                                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                                    .monospacedDigit()
                                     .foregroundColor(.orange)
                             }
                         }

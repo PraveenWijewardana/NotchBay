@@ -134,6 +134,12 @@ public final class NotchViewModel: ObservableObject {
             }
             .store(in: &cancellables)
             
+        caffeineService.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+            
         // Wire up Agent Companion triggers (Permission requests & Task completions)
         agentService.onPermissionRequested = { [weak self] req in
             self?.presentHUD(

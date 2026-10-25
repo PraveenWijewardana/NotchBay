@@ -365,8 +365,9 @@ public struct HomeView: View {
                         Image(systemName: viewModel.caffeineService.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
                             .font(.system(size: 8.5))
                         if viewModel.caffeineService.isActive {
-                            Text(viewModel.caffeineService.selectedPreset.shortTitle)
+                            Text(viewModel.caffeineService.formattedRemainingTime)
                                 .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .monospacedDigit()
                                 .lineLimit(1)
                         }
                     }

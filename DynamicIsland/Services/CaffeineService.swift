@@ -63,16 +63,15 @@ public final class CaffeineService: ObservableObject {
     public var formattedRemainingTime: String {
         guard isActive else { return "" }
         if selectedPreset == .indefinite {
-            return "Active"
+            return "∞"
         }
-        let mins = remainingSeconds / 60
+        let hrs = remainingSeconds / 3600
+        let mins = (remainingSeconds % 3600) / 60
         let secs = remainingSeconds % 60
-        if mins >= 60 {
-            let hrs = mins / 60
-            let remMins = mins % 60
-            return String(format: "%dh %02dm", hrs, remMins)
+        if hrs > 0 {
+            return String(format: "%d:%02d:%02d", hrs, mins, secs)
         }
-        return String(format: "%d:%02d", mins, secs)
+        return String(format: "%02d:%02d", mins, secs)
     }
     
     public func toggle() {
@@ -96,9 +95,10 @@ public final class CaffeineService: ObservableObject {
             let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     guard let self = self else { return }
-                    if self.remainingSeconds > 1 {
+                    if self.remainingSeconds > 0 {
                         self.remainingSeconds -= 1
-                    } else {
+                    }
+                    if self.remainingSeconds <= 0 {
                         self.deactivate()
                     }
                 }

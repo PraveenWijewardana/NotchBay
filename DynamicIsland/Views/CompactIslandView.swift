@@ -7,7 +7,9 @@ public struct CompactIslandView: View {
     @ObservedObject private var mediaService: MediaControllerService
     
     // Symmetrical ear content width with generous breathing room (fits full speeds and single-line status)
-    private let earWidth: CGFloat = 74.0
+    private var earWidth: CGFloat {
+        viewModel.caffeineService.isActive ? 86.0 : 74.0
+    }
     
     public init(viewModel: NotchViewModel) {
         self.viewModel = viewModel
@@ -128,10 +130,19 @@ public struct CompactIslandView: View {
                 .frame(height: 12)
             } else {
                 if viewModel.caffeineService.isActive {
-                    Image(systemName: "cup.and.saucer.fill")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.orange)
-                        .shadow(color: .orange.opacity(0.8), radius: 2)
+                    HStack(spacing: 2.5) {
+                        Image(systemName: "cup.and.saucer.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.orange)
+                            .shadow(color: .orange.opacity(0.8), radius: 2)
+                        
+                        Text(viewModel.caffeineService.formattedRemainingTime)
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundColor(.orange)
+                    }
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 }
                 
                 Image(systemName: "cpu")

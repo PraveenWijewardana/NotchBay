@@ -96,6 +96,14 @@ public final class NotchWindowController: NSObject, ObservableObject {
             }
             .store(in: &cancellables)
             
+        viewModel.caffeineService.$isActive
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self, self.viewModel.state == .compact else { return }
+                self.animateFrame(for: .compact)
+            }
+            .store(in: &cancellables)
+            
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -155,8 +163,9 @@ public final class NotchWindowController: NSObject, ObservableObject {
             width = max(440.0, physicalNotchWidth + (earWidth * 2.0) + 16.0)
             height = max(notchHeight + 8.0, 44.0)
         case .compact:
-            // Symmetrical compact ears: 74pt content + 10pt outer padding on each side of the physical notch
-            let earTotal: CGFloat = 84.0
+            // Symmetrical compact ears: dynamic content (74pt or 86pt with active caffeine) + 10pt outer padding
+            let earContent: CGFloat = viewModel.caffeineService.isActive ? 86.0 : 74.0
+            let earTotal: CGFloat = earContent + 10.0
             width = physicalNotchWidth + (earTotal * 2.0)
             height = max(notchHeight + 4.0, 36.0)
         }
