@@ -136,7 +136,7 @@ public struct NotchContainerView: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-            case .fileTransfer(_, _, let isAirDrop, _):
+            case .fileTransfer(_, _, let isAirDrop, _, _, _, _):
                 return LinearGradient(
                     colors: isAirDrop ? [Color.cyan.opacity(0.7), Color.blue.opacity(0.6)] : [Color.blue.opacity(0.7), Color.purple.opacity(0.6)],
                     startPoint: .leading,
@@ -187,7 +187,7 @@ public struct NotchContainerView: View {
                 return isActive ? Color.orange.opacity(0.5) : Color.clear
             case .magSafe:
                 return Color.green.opacity(0.5)
-            case .fileTransfer(_, _, let isAirDrop, _):
+            case .fileTransfer(_, _, let isAirDrop, _, _, _, _):
                 return isAirDrop ? Color.cyan.opacity(0.5) : Color.blue.opacity(0.5)
             case .focus(let isActive, _, _):
                 return isActive ? Color.purple.opacity(0.5) : Color.clear

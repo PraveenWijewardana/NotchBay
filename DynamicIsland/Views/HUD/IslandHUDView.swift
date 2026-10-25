@@ -50,22 +50,22 @@ public struct IslandHUDView: View {
                             .foregroundColor(.green)
                     }
                     
-                case .fileTransfer(_, let progress, let isAirDrop, let isCompleted):
+                case .fileTransfer(_, let progress, let isAirDrop, let isCompleted, let currentBytes, let totalBytes, _):
                     HStack(spacing: 6) {
                         if isCompleted {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.green)
-                            Text("Received")
+                            Text(isAirDrop ? "Received" : "Complete")
                                 .font(.system(size: 11, weight: .bold, design: .rounded))
                                 .foregroundColor(.green)
-                        } else {
+                        } else if totalBytes > 0 {
                             ZStack {
                                 Circle()
                                     .stroke(Color.white.opacity(0.18), lineWidth: 2)
                                     .frame(width: 18, height: 18)
                                 Circle()
-                                    .trim(from: 0, to: CGFloat(progress))
+                                    .trim(from: 0, to: CGFloat(max(0.02, min(1.0, progress))))
                                     .stroke(isAirDrop ? Color.cyan : Color.blue, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                                     .rotationEffect(.degrees(-90))
                                     .frame(width: 18, height: 18)
@@ -73,6 +73,21 @@ public struct IslandHUDView: View {
                             Text("\(Int(progress * 100))%")
                                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundColor(isAirDrop ? .cyan : .blue)
+                        } else {
+                            // Real downloaded size + animated progress ring when total size is indeterminate
+                            ZStack {
+                                Circle()
+                                    .stroke(Color.white.opacity(0.18), lineWidth: 2)
+                                    .frame(width: 18, height: 18)
+                                Circle()
+                                    .trim(from: 0.1, to: 0.75)
+                                    .stroke(LinearGradient(colors: [.cyan, .blue], startPoint: .top, endPoint: .bottom), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                                    .rotationEffect(.degrees(viewModel.isHovering ? 360 : 180))
+                                    .frame(width: 18, height: 18)
+                            }
+                            Text(ByteCountFormatter.string(fromByteCount: currentBytes, countStyle: .file))
+                                .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                                .foregroundColor(.cyan)
                         }
                     }
                     
@@ -159,14 +174,15 @@ public struct IslandHUDView: View {
         .frame(height: 46)
         .contentShape(Rectangle())
         .onTapGesture {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                if case .fileTransfer = alert.type {
-                    viewModel.fileTransferService.openFileInFinder()
-                } else if case .agentPermission = alert.type {
-                    viewModel.state = .expanded
-                    viewModel.selectedPageIndex = 5 // Jump directly to Agent tab!
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                if case .agentPermission = alert.type {
+                    viewModel.selectedPageIndex = 5 // Jump to Agent tab
+                    viewModel.setExpanded(true)
+                } else if case .fileTransfer = alert.type {
+                    viewModel.selectedPageIndex = 4 // Jump to Shelf / Downloads tab
+                    viewModel.setExpanded(true)
                 } else {
-                    viewModel.state = .expanded
+                    viewModel.setExpanded(true)
                 }
             }
         }
@@ -186,7 +202,7 @@ public struct IslandHUDView: View {
                     .foregroundColor(.green)
             }
             
-        case .fileTransfer(_, _, let isAirDrop, let isCompleted):
+        case .fileTransfer(_, _, let isAirDrop, let isCompleted, _, _, _):
             ZStack {
                 Circle()
                     .fill(isCompleted ? Color.green.opacity(0.25) : (isAirDrop ? Color.cyan.opacity(0.25) : Color.blue.opacity(0.25)))
@@ -274,7 +290,7 @@ public struct IslandHUDView: View {
         case .magSafe:
             return LinearGradient(colors: [.green, Color(red: 0.2, green: 0.95, blue: 0.5)], startPoint: .leading, endPoint: .trailing)
             
-        case .fileTransfer(_, _, let isAirDrop, _):
+        case .fileTransfer(_, _, let isAirDrop, _, _, _, _):
             return isAirDrop
                 ? LinearGradient(colors: [.cyan, .blue], startPoint: .leading, endPoint: .trailing)
                 : LinearGradient(colors: [.blue, .purple], startPoint: .leading, endPoint: .trailing)
@@ -318,7 +334,7 @@ public struct IslandHUDView: View {
         switch alert.type {
         case .magSafe:
             return .green
-        case .fileTransfer(_, _, let isAirDrop, let isCompleted):
+        case .fileTransfer(_, _, let isAirDrop, let isCompleted, _, _, _):
             return isCompleted ? .green : (isAirDrop ? .cyan : .blue)
         case .volume(_, let isMuted):
             return isMuted ? .red : .white

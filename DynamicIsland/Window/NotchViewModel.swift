@@ -229,15 +229,25 @@ public final class NotchViewModel: ObservableObject {
                         name: transfer.filename,
                         progress: transfer.progress,
                         isAirDrop: transfer.isAirDrop,
-                        isCompleted: transfer.isCompleted
+                        isCompleted: transfer.isCompleted,
+                        currentBytes: transfer.currentBytes,
+                        totalBytes: transfer.totalBytes,
+                        speedStr: transfer.formattedSpeed
                     ),
-                    title: transfer.isAirDrop ? "AirDrop" : "Download",
-                    subtitle: transfer.isCompleted ? "Saved to Downloads" : transfer.progressPercentFormatted,
-                    icon: transfer.isAirDrop ? "airdrop" : "arrow.down.circle.fill",
-                    progress: transfer.progress,
-                    duration: transfer.isCompleted ? 3.5 : 2.5
+                    title: transfer.isAirDrop ? "AirDrop" : (transfer.isCompleted ? "Download Complete" : "Downloading"),
+                    subtitle: transfer.subtitleFormatted,
+                    icon: transfer.isAirDrop ? "airdrop" : (transfer.isCompleted ? "checkmark.circle.fill" : "arrow.down.circle.fill"),
+                    progress: transfer.totalBytes > 0 ? transfer.progress : nil,
+                    duration: transfer.isCompleted ? 3.5 : 2.0
                 )
                 self.presentHUD(alert)
+            } else {
+                if self.state == .hud, case .fileTransfer = self.currentHUDAlert?.type {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                        self.state = .compact
+                        self.currentHUDAlert = nil
+                    }
+                }
             }
         }
         
@@ -255,30 +265,35 @@ public final class NotchViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Live HUD Alerts (Volume, Battery, Track)
+    // MARK: - Live HUD Alerts (Volume, Battery, Track, Downloads)
     public func presentHUD(_ alert: HUDAlert) {
         self.currentHUDAlert = alert
         hudDismissTimer?.invalidate()
         
+        // Only enter HUD mode if currently in compact mode.
+        // If the user is currently viewing the expanded dashboard (Home, Music, etc.), never kick them out!
         if state == .compact {
             withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
                 self.state = .hud
             }
         }
         
-        let timer = Timer(timeInterval: alert.duration, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                if self.state == .hud && self.currentHUDAlert?.id == alert.id {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                        self.state = .compact
-                        self.currentHUDAlert = nil
+        // Auto-dismiss HUD only if in .hud mode
+        if state == .hud {
+            let timer = Timer(timeInterval: alert.duration, repeats: false) { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    if self.state == .hud && self.currentHUDAlert?.id == alert.id {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                            self.state = .compact
+                            self.currentHUDAlert = nil
+                        }
                     }
                 }
             }
+            RunLoop.main.add(timer, forMode: .common)
+            hudDismissTimer = timer
         }
-        RunLoop.main.add(timer, forMode: .common)
-        hudDismissTimer = timer
     }
     
     public func handleHover(_ hovering: Bool) {
@@ -286,30 +301,33 @@ public final class NotchViewModel: ObservableObject {
         hoverTask?.cancel()
         
         if hovering {
-            // If in compact mode, wait for an intentional hover pause before expanding,
-            // preventing accidental triggers when merely brushing cursor near the top edge.
-            if state == .compact {
+            // Expand to dashboard if in compact OR hud mode (e.g. while downloading files)!
+            if state == .compact || state == .hud {
                 hoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 350_000_000)
-                    if !Task.isCancelled && self.isHovering && self.state == .compact {
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    if !Task.isCancelled && self.isHovering && (self.state == .compact || self.state == .hud) {
                         self.setExpanded(true)
                     }
                 }
             }
         }
-        // When mouse exits, do not auto-collapse if user is viewing or using the expanded island;
-        // it stays open until the user clicks outside or clicks the collapse button.
     }
     
     public func toggleExpand() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            state = (state == .compact) ? .expanded : .compact
+            state = (state == .compact || state == .hud) ? .expanded : .compact
+            if state == .expanded {
+                hudDismissTimer?.invalidate()
+            }
         }
     }
     
     public func setExpanded(_ expanded: Bool) {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
             state = expanded ? .expanded : .compact
+            if expanded {
+                hudDismissTimer?.invalidate()
+            }
         }
     }
     

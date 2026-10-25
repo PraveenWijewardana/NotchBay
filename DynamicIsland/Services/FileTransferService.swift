@@ -5,10 +5,13 @@ import Combine
 public struct ActiveTransferItem: Identifiable, Equatable, Sendable {
     public let id: String
     public let filename: String
-    public let progress: Double // 0.0 to 1.0
+    public let progress: Double // 0.0 to 1.0 (if total known)
     public let isAirDrop: Bool
     public let isCompleted: Bool
     public let fileURL: URL?
+    public let currentBytes: Int64
+    public let totalBytes: Int64 // -1 if unknown
+    public let speedBytesPerSec: Double
     
     public init(
         id: String = UUID().uuidString,
@@ -16,7 +19,10 @@ public struct ActiveTransferItem: Identifiable, Equatable, Sendable {
         progress: Double,
         isAirDrop: Bool = false,
         isCompleted: Bool = false,
-        fileURL: URL? = nil
+        fileURL: URL? = nil,
+        currentBytes: Int64 = 0,
+        totalBytes: Int64 = -1,
+        speedBytesPerSec: Double = 0
     ) {
         self.id = id
         self.filename = filename
@@ -24,10 +30,57 @@ public struct ActiveTransferItem: Identifiable, Equatable, Sendable {
         self.isAirDrop = isAirDrop
         self.isCompleted = isCompleted
         self.fileURL = fileURL
+        self.currentBytes = currentBytes
+        self.totalBytes = totalBytes
+        self.speedBytesPerSec = speedBytesPerSec
+    }
+    
+    public var hasKnownTotal: Bool {
+        totalBytes > 0
+    }
+    
+    public var formattedCurrentSize: String {
+        ByteCountFormatter.string(fromByteCount: currentBytes, countStyle: .file)
+    }
+    
+    public var formattedTotalSize: String {
+        guard totalBytes > 0 else { return "" }
+        return ByteCountFormatter.string(fromByteCount: totalBytes, countStyle: .file)
+    }
+    
+    public var formattedSpeed: String {
+        guard speedBytesPerSec > 0 else { return "" }
+        if speedBytesPerSec >= 1024 * 1024 * 1024 {
+            return String(format: "%.1f GB/s", speedBytesPerSec / (1024 * 1024 * 1024))
+        } else if speedBytesPerSec >= 1024 * 1024 {
+            return String(format: "%.1f MB/s", speedBytesPerSec / (1024 * 1024))
+        } else if speedBytesPerSec >= 1024 {
+            return String(format: "%.0f KB/s", speedBytesPerSec / 1024)
+        }
+        return "\(Int(speedBytesPerSec)) B/s"
     }
     
     public var progressPercentFormatted: String {
-        "\(Int(progress * 100))%"
+        if isCompleted {
+            return "100%"
+        }
+        if totalBytes > 0 {
+            return "\(Int(progress * 100))%"
+        }
+        return formattedCurrentSize
+    }
+    
+    public var subtitleFormatted: String {
+        if isCompleted {
+            return "Saved to Downloads • \(formattedCurrentSize)"
+        }
+        if totalBytes > 0 {
+            let speedStr = formattedSpeed.isEmpty ? "" : " • \(formattedSpeed)"
+            return "\(formattedCurrentSize) of \(formattedTotalSize)\(speedStr)"
+        } else {
+            let speedStr = formattedSpeed.isEmpty ? "" : " • \(formattedSpeed)"
+            return "\(formattedCurrentSize)\(speedStr)"
+        }
     }
 }
 
@@ -38,14 +91,15 @@ public final class FileTransferService: ObservableObject {
     
     private var monitorTimer: Timer?
     private let downloadsURL: URL
-    private var knownFiles: [String: UInt64] = [:]
+    private var knownFiles: [String: Int64] = [:]
+    private var lastBytesMap: [String: Int64] = [:]
+    private var lastPollTime: Date = Date()
     private var dismissTimer: Timer?
     
     public init() {
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSHomeDirectory() + "/Downloads")
         self.downloadsURL = downloads
         
-        // Populate initial file snapshot
         scanInitialDownloads()
         startMonitoring()
     }
@@ -58,15 +112,16 @@ public final class FileTransferService: ObservableObject {
     private func scanInitialDownloads() {
         guard let contents = try? FileManager.default.contentsOfDirectory(at: downloadsURL, includingPropertiesForKeys: [.fileSizeKey], options: [.skipsHiddenFiles]) else { return }
         for file in contents {
-            let size = (try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-            knownFiles[file.lastPathComponent] = UInt64(size)
+            let size = Int64((try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+            knownFiles[file.lastPathComponent] = size
         }
     }
     
     public func startMonitoring() {
         monitorTimer?.invalidate()
-        // Poll every 1.0s to detect incoming AirDrops or browser downloads
-        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
+        lastPollTime = Date()
+        // Poll every 0.8s to detect browser downloads or incoming AirDrops
+        let timer = Timer(timeInterval: 0.8, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkForTransferActivity()
             }
@@ -82,51 +137,75 @@ public final class FileTransferService: ObservableObject {
             options: [.skipsHiddenFiles]
         ) else { return }
         
+        let now = Date()
+        let timeDelta = max(0.1, now.timeIntervalSince(lastPollTime))
+        lastPollTime = now
+        
         // 1. Look for active browser download files (.crdownload, .download, .part)
         let downloadExtensions = ["crdownload", "download", "part"]
         if let activeDown = contents.first(where: { downloadExtensions.contains($0.pathExtension.lowercased()) }) {
-            let filename = activeDown.deletingPathExtension().lastPathComponent
-            let currentSize = UInt64((try? activeDown.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+            let metrics = getDownloadMetrics(for: activeDown)
+            let prevBytes = lastBytesMap[metrics.filename] ?? metrics.current
+            let byteDiff = max(0, metrics.current - prevBytes)
+            lastBytesMap[metrics.filename] = metrics.current
             
-            // Progressive simulation/real tracking
-            let progress = min(0.95, max(0.15, activeTransfer?.filename == filename ? (activeTransfer?.progress ?? 0.15) + 0.12 : 0.25))
+            let speed = Double(byteDiff) / timeDelta
+            
+            let progress: Double
+            if metrics.total > 0 {
+                progress = min(0.99, max(0.01, Double(metrics.current) / Double(metrics.total)))
+            } else {
+                progress = 0.0
+            }
             
             let item = ActiveTransferItem(
-                filename: filename,
+                filename: metrics.filename,
                 progress: progress,
                 isAirDrop: false,
                 isCompleted: false,
-                fileURL: activeDown
+                fileURL: activeDown,
+                currentBytes: metrics.current,
+                totalBytes: metrics.total,
+                speedBytesPerSec: speed
             )
             self.activeTransfer = item
             onTransferChanged?(item)
             return
+        } else if activeTransfer != nil && activeTransfer?.isCompleted == false {
+            // No active .download / .crdownload file found, but activeTransfer was downloading.
+            // Check if it just completed into a finalized file in ~/Downloads
+            lastBytesMap.removeAll()
         }
         
-        // 2. Look for newly arrived files (e.g. AirDrop / newly completed downloads)
+        // 2. Look for newly arrived files (AirDrop arrivals or completed downloads)
         for file in contents {
             let name = file.lastPathComponent
             guard !downloadExtensions.contains(file.pathExtension.lowercased()) else { continue }
             
             if knownFiles[name] == nil {
-                // Brand new file appeared in ~/Downloads!
+                // New file has completed!
+                let currentSize = Int64((try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+                knownFiles[name] = currentSize
+                
                 let isAirDrop = (file.pathExtension.isEmpty || ["png", "jpg", "jpeg", "heic", "mov", "mp4", "pdf", "zip"].contains(file.pathExtension.lowercased()))
-                knownFiles[name] = UInt64((try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
                 
                 let item = ActiveTransferItem(
                     filename: name,
                     progress: 1.0,
                     isAirDrop: isAirDrop,
                     isCompleted: true,
-                    fileURL: file
+                    fileURL: file,
+                    currentBytes: currentSize,
+                    totalBytes: currentSize,
+                    speedBytesPerSec: 0
                 )
                 self.activeTransfer = item
                 NSSound(named: "Glass")?.play()
                 onTransferChanged?(item)
                 
-                // Auto-dismiss after 4.0 seconds
+                // Keep completed banner for 3.5 seconds
                 dismissTimer?.invalidate()
-                dismissTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { [weak self] _ in
+                dismissTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: false) { [weak self] _ in
                     Task { @MainActor [weak self] in
                         if self?.activeTransfer?.isCompleted == true {
                             self?.activeTransfer = nil
@@ -139,26 +218,83 @@ public final class FileTransferService: ObservableObject {
         }
     }
     
+    private func getDownloadMetrics(for url: URL) -> (current: Int64, total: Int64, filename: String) {
+        let ext = url.pathExtension.lowercased()
+        var current: Int64 = 0
+        var total: Int64 = -1
+        var cleanFilename = url.deletingPathExtension().lastPathComponent
+        
+        if ext == "download" {
+            // Safari .download directory bundle
+            let plistURL = url.appendingPathComponent("Info.plist")
+            if let dict = NSDictionary(contentsOf: plistURL) {
+                if let exp = dict["NSURLDownloadBytesExpected"] as? NSNumber, exp.int64Value > 0 {
+                    total = exp.int64Value
+                } else if let exp = dict["DownloadEntryProgressTotalToLoad"] as? NSNumber, exp.int64Value > 0 {
+                    total = exp.int64Value
+                }
+                
+                if let rec = dict["NSURLDownloadBytesReceived"] as? NSNumber, rec.int64Value > 0 {
+                    current = rec.int64Value
+                } else if let rec = dict["DownloadEntryProgressBytesSoFar"] as? NSNumber, rec.int64Value > 0 {
+                    current = rec.int64Value
+                }
+                
+                if let resume = dict["DownloadEntryResumeInformation"] as? [String: Any] {
+                    if total <= 0, let exp = resume["NSURLDownloadBytesExpected"] as? NSNumber, exp.int64Value > 0 {
+                        total = exp.int64Value
+                    }
+                    if current <= 0, let rec = resume["NSURLDownloadBytesReceived"] as? NSNumber, rec.int64Value > 0 {
+                        current = rec.int64Value
+                    }
+                }
+            }
+            
+            // Measure actual files inside bundle if current is 0
+            if let innerFiles = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: [.fileSizeKey], options: [.skipsHiddenFiles]) {
+                for inner in innerFiles where inner.lastPathComponent != "Info.plist" {
+                    cleanFilename = inner.lastPathComponent
+                    let size = Int64((try? inner.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+                    if size > current {
+                        current = size
+                    }
+                }
+            }
+        } else {
+            // Chrome (.crdownload) or Firefox (.part)
+            current = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+            
+            // If cleanFilename still has another extension e.g. "image.png" from "image.png.crdownload"
+            if cleanFilename.isEmpty {
+                cleanFilename = url.lastPathComponent
+            }
+        }
+        
+        return (current, total, cleanFilename)
+    }
+    
     public func openFileInFinder() {
         guard let url = activeTransfer?.fileURL else { return }
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
     
-    // Testing trigger
     public func simulateAirDropTransfer(filename: String = "IMG_4092.HEIC") {
         let item = ActiveTransferItem(
             filename: filename,
             progress: 1.0,
             isAirDrop: true,
             isCompleted: true,
-            fileURL: downloadsURL.appendingPathComponent(filename)
+            fileURL: downloadsURL.appendingPathComponent(filename),
+            currentBytes: 15_420_000,
+            totalBytes: 15_420_000,
+            speedBytesPerSec: 0
         )
         self.activeTransfer = item
         NSSound(named: "Glass")?.play()
         onTransferChanged?(item)
         
         dismissTimer?.invalidate()
-        dismissTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { [weak self] _ in
+        dismissTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.activeTransfer = nil
                 self?.onTransferChanged?(nil)
