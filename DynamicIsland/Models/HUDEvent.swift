@@ -10,6 +10,7 @@ public enum HUDEventType: Equatable, Sendable {
     case caffeine(isActive: Bool, presetTitle: String)
     case magSafe(level: Int, isPluggedIn: Bool, timeRemaining: String?)
     case fileTransfer(name: String, progress: Double, isAirDrop: Bool, isCompleted: Bool)
+    case focus(isActive: Bool, sessionTitle: String, duration: String)
 }
 
 public struct HUDAlert: Identifiable, Equatable, Sendable {

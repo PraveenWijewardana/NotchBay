@@ -6,12 +6,14 @@ public struct HomeView: View {
     @ObservedObject private var mediaService: MediaControllerService
     @ObservedObject private var weatherService: WeatherService
     @ObservedObject private var calendarService: CalendarService
+    @ObservedObject private var focusService: FocusService
     
     public init(viewModel: NotchViewModel) {
         self.viewModel = viewModel
         self.mediaService = viewModel.mediaService
         self.weatherService = viewModel.weatherService
         self.calendarService = viewModel.calendarService
+        self.focusService = viewModel.focusService
     }
     
     // MARK: - Clock & Calendar Formatted Properties
@@ -467,74 +469,145 @@ public struct HomeView: View {
         }
     }
     
-    // MARK: - Column 3: Weather
+    // MARK: - Column 3: Weather & Focus Mode
     private var weatherColumn: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Cloud Icon & Big Temperature
-            HStack(spacing: 8) {
-                Image(systemName: weatherService.weather.condition.iconName)
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundColor(.white)
-                
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("\(weatherService.weather.temperature)°")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+            // Weather Header (Tapping jumps to Weather Dashboard)
+            VStack(alignment: .leading, spacing: 5) {
+                // Cloud Icon & Big Temperature
+                HStack(spacing: 8) {
+                    Image(systemName: weatherService.weather.condition.iconName)
+                        .font(.system(size: 26, weight: .semibold))
                         .foregroundColor(.white)
                     
-                    Text(weatherService.weather.condition.rawValue)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.6))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("\(weatherService.weather.temperature)°")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                        
+                        Text(weatherService.weather.condition.rawValue)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                            .lineLimit(1)
+                    }
+                }
+                
+                // City Name
+                Text(weatherService.currentCity)
+                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                    viewModel.selectedPageIndex = 7 // Jump to Weather Dashboard
+                }
+            }
+            
+            Spacer(minLength: 4)
+            
+            // MARK: - Focus Mode Card (Replaces High & Low)
+            focusModeCard
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+    }
+    
+    // MARK: - Focus Mode Card Component
+    private var focusModeCard: some View {
+        HStack(spacing: 7) {
+            // Glowing Moon / Brain Icon with subtle pulsing ring when active
+            ZStack {
+                Circle()
+                    .fill(focusService.isActive ? Color.purple.opacity(0.3) : Color.white.opacity(0.08))
+                    .frame(width: 26, height: 26)
+                
+                if focusService.isActive {
+                    Circle()
+                        .stroke(Color(red: 0.75, green: 0.55, blue: 1.0).opacity(0.6), lineWidth: 1.2)
+                        .frame(width: 26, height: 26)
+                }
+                
+                Image(systemName: focusService.isActive ? focusService.focusType.iconName : "moon.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(focusService.isActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.75))
+            }
+            
+            // Title & Live Countdown / Status
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Focus")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                
+                HStack(spacing: 3) {
+                    if focusService.isActive {
+                        Circle()
+                            .fill(Color(red: 0.75, green: 0.55, blue: 1.0))
+                            .frame(width: 4, height: 4)
+                    }
+                    Text(focusService.formattedRemainingTime)
+                        .font(.system(size: 10, weight: focusService.isActive ? .bold : .medium, design: focusService.isActive ? .monospaced : .rounded))
+                        .foregroundColor(focusService.isActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.5))
                         .lineLimit(1)
                 }
             }
             
-            // City Name: Bengaluru
-            Text(weatherService.currentCity)
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .lineLimit(1)
-            
             Spacer(minLength: 0)
             
-            // High & Low Temperatures
-            HStack(spacing: 16) {
-                // High
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 3) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.orange)
-                        Text("High")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                    Text("\(weatherService.weather.highTemp)°")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+            // Action Button (Play / Stop)
+            Button {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                    focusService.toggleFocus()
                 }
-                
-                // Low
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 3) {
-                        Image(systemName: "arrow.down.circle.fill")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(red: 0.25, green: 0.70, blue: 1.0))
-                        Text("Low")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(.white.opacity(0.6))
-                    }
-                    Text("\(weatherService.weather.lowTemp)°")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
+            } label: {
+                Image(systemName: focusService.isActive ? "stop.fill" : "play.fill")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundColor(focusService.isActive ? .white : .black)
+                    .frame(width: 20, height: 20)
+                    .background(focusService.isActive ? Color.purple : Color.white)
+                    .clipShape(Circle())
             }
+            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(focusService.isActive ? Color.purple.opacity(0.2) : Color.white.opacity(0.06))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(focusService.isActive ? Color.purple.opacity(0.5) : Color.white.opacity(0.12), lineWidth: 0.8)
+        )
         .contentShape(Rectangle())
         .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                viewModel.selectedPageIndex = 7 // Jump to Weather Dashboard
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                focusService.toggleFocus()
+            }
+        }
+        .contextMenu {
+            Button("15 Minutes") {
+                focusService.startFocus(preset: .minutes15)
+            }
+            Button("25 Minutes (Pomodoro)") {
+                focusService.startFocus(preset: .minutes25)
+            }
+            Button("45 Minutes (Deep Work)") {
+                focusService.startFocus(preset: .minutes45)
+            }
+            Button("60 Minutes (Intense Focus)") {
+                focusService.startFocus(preset: .minutes60)
+            }
+            Button("Until Turned Off") {
+                focusService.startFocus(preset: .indefinite)
+            }
+            Divider()
+            Button("Open Focus & Timers Dashboard") {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                    viewModel.selectedPageIndex = 2
+                }
             }
         }
     }

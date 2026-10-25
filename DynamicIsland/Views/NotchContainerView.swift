@@ -142,6 +142,12 @@ public struct NotchContainerView: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
+            case .focus(let isActive, _, _):
+                return LinearGradient(
+                    colors: isActive ? [Color.indigo.opacity(0.7), Color.purple.opacity(0.6)] : [Color.white.opacity(0.2), Color.purple.opacity(0.3)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
             }
         }
         
@@ -183,6 +189,8 @@ public struct NotchContainerView: View {
                 return Color.green.opacity(0.5)
             case .fileTransfer(_, _, let isAirDrop, _):
                 return isAirDrop ? Color.cyan.opacity(0.5) : Color.blue.opacity(0.5)
+            case .focus(let isActive, _, _):
+                return isActive ? Color.purple.opacity(0.5) : Color.clear
             }
         }
         if viewModel.isHovering && viewModel.state == .compact {

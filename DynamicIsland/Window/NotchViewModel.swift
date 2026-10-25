@@ -50,6 +50,7 @@ public final class NotchViewModel: ObservableObject {
     @Published public var callService = CallService()
     @Published public var clipboardService = ClipboardService()
     @Published public var fileTransferService = FileTransferService()
+    @Published public var focusService = FocusService()
     
     // Live Dynamic Island HUD
     @Published public var currentHUDAlert: HUDAlert? = nil
@@ -238,6 +239,19 @@ public final class NotchViewModel: ObservableObject {
                 )
                 self.presentHUD(alert)
             }
+        }
+        
+        // Wire up Focus Mode HUD alerts
+        focusService.onFocusChanged = { [weak self] (isActive, sessionTitle, duration) in
+            guard let self = self else { return }
+            let alert = HUDAlert(
+                type: .focus(isActive: isActive, sessionTitle: sessionTitle, duration: duration),
+                title: isActive ? "Focus Mode" : "Focus Ended",
+                subtitle: isActive ? "\(sessionTitle) • \(duration)" : "\(sessionTitle) • \(duration)",
+                icon: isActive ? "moon.fill" : "checkmark.circle.fill",
+                duration: 2.5
+            )
+            self.presentHUD(alert)
         }
     }
     

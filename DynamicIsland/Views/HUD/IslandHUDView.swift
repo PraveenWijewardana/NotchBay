@@ -121,6 +121,16 @@ public struct IslandHUDView: View {
                             .foregroundColor(.green)
                     }
                     
+                case .focus(let isActive, _, _):
+                    HStack(spacing: 5) {
+                        Image(systemName: isActive ? "moon.fill" : "moon.stars.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(isActive ? Color(red: 0.75, green: 0.55, blue: 1.0) : .white)
+                        Text(isActive ? "Focus On" : "Focus Ended")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .foregroundColor(isActive ? Color(red: 0.75, green: 0.55, blue: 1.0) : .white)
+                    }
+                    
                 default:
                     HStack(spacing: 7) {
                         if let progress = alert.progress {
@@ -245,6 +255,16 @@ public struct IslandHUDView: View {
                     .font(.system(size: 10, weight: .bold))
                     .foregroundColor(isActive ? .orange : .white)
             }
+            
+        case .focus(let isActive, _, _):
+            ZStack {
+                Circle()
+                    .fill(isActive ? Color.purple.opacity(0.25) : Color.white.opacity(0.12))
+                    .frame(width: 22, height: 22)
+                Image(systemName: isActive ? "moon.fill" : "checkmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(isActive ? Color(red: 0.75, green: 0.55, blue: 1.0) : .green)
+            }
         }
     }
     
@@ -286,6 +306,11 @@ public struct IslandHUDView: View {
             return isActive
                 ? LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing)
                 : LinearGradient(colors: [.white.opacity(0.4), .gray], startPoint: .leading, endPoint: .trailing)
+                
+        case .focus(let isActive, _, _):
+            return isActive
+                ? LinearGradient(colors: [.indigo, .purple], startPoint: .leading, endPoint: .trailing)
+                : LinearGradient(colors: [.white.opacity(0.4), .gray], startPoint: .leading, endPoint: .trailing)
         }
     }
     
@@ -309,6 +334,8 @@ public struct IslandHUDView: View {
             return .green
         case .caffeine(let isActive, _):
             return isActive ? .orange : .white
+        case .focus(let isActive, _, _):
+            return isActive ? Color(red: 0.75, green: 0.55, blue: 1.0) : .secondary
         }
     }
 }
