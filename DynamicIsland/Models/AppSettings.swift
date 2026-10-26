@@ -214,6 +214,12 @@ public final class AppSettings: ObservableObject {
     @Published public var enableCapsLockHUD: Bool {
         didSet { defaults.set(enableCapsLockHUD, forKey: "nb_enableCapsLockHUD") }
     }
+    @Published public var enableAirDropAlerts: Bool {
+        didSet { defaults.set(enableAirDropAlerts, forKey: "nb_enableAirDropAlerts") }
+    }
+    @Published public var enableCallDetection: Bool {
+        didSet { defaults.set(enableCallDetection, forKey: "nb_enableCallDetection") }
+    }
     
     // MARK: - AI Code Agents
     @Published public var agentPort: Int {
@@ -299,6 +305,8 @@ public final class AppSettings: ObservableObject {
         self.enableVolumeHUD = defaults.object(forKey: "nb_enableVolumeHUD") as? Bool ?? true
         self.enableBrightnessHUD = defaults.object(forKey: "nb_enableBrightnessHUD") as? Bool ?? true
         self.enableCapsLockHUD = defaults.object(forKey: "nb_enableCapsLockHUD") as? Bool ?? true
+        self.enableAirDropAlerts = defaults.object(forKey: "nb_enableAirDropAlerts") as? Bool ?? true
+        self.enableCallDetection = defaults.object(forKey: "nb_enableCallDetection") as? Bool ?? true
         
         self.agentPort = defaults.object(forKey: "nb_agentPort") as? Int ?? 19842
         self.autoDetectAgents = defaults.object(forKey: "nb_autoDetectAgents") as? Bool ?? true
@@ -360,6 +368,8 @@ public final class AppSettings: ObservableObject {
         enableVolumeHUD = true
         enableBrightnessHUD = true
         enableCapsLockHUD = true
+        enableAirDropAlerts = true
+        enableCallDetection = true
         
         agentPort = 19842
         autoDetectAgents = true

@@ -5,12 +5,24 @@ public enum CallAppType: String, Codable, Sendable, CaseIterable {
     case normal = "Phone"
     case facetime = "FaceTime"
     case whatsApp = "WhatsApp"
+    case zoom = "Zoom"
+    case teams = "Teams"
+    case telegram = "Telegram"
+    case slack = "Slack"
+    case meet = "Google Meet"
+    case other = "Call"
     
     public var iconName: String {
         switch self {
         case .normal: return "phone.fill"
         case .facetime: return "video.fill"
         case .whatsApp: return "phone.bubble.fill"
+        case .zoom: return "video.badge.waveform.fill"
+        case .teams: return "person.2.fill"
+        case .telegram: return "paperplane.fill"
+        case .slack: return "number"
+        case .meet: return "video.fill"
+        case .other: return "phone.fill"
         }
     }
     
@@ -19,6 +31,12 @@ public enum CallAppType: String, Codable, Sendable, CaseIterable {
         case .normal: return Color(red: 0.25, green: 0.85, blue: 0.45) // iOS Green
         case .facetime: return Color(red: 0.2, green: 0.75, blue: 1.0)  // FaceTime Cyan
         case .whatsApp: return Color(red: 0.15, green: 0.82, blue: 0.40) // WhatsApp Emerald
+        case .zoom: return Color(red: 0.18, green: 0.52, blue: 1.0)    // Zoom Blue
+        case .teams: return Color(red: 0.42, green: 0.42, blue: 0.95)   // Teams Indigo
+        case .telegram: return Color(red: 0.20, green: 0.65, blue: 0.95) // Telegram Sky
+        case .slack: return Color(red: 0.90, green: 0.35, blue: 0.45)   // Slack Berry
+        case .meet: return Color(red: 0.05, green: 0.68, blue: 0.45)    // Meet Green
+        case .other: return Color(red: 0.30, green: 0.80, blue: 0.50)
         }
     }
 }
@@ -29,17 +47,34 @@ public enum CallCategory: String, Codable, Sendable, CaseIterable {
     case facetimeVideo = "FaceTime Video"
     case whatsAppAudio = "WhatsApp Audio"
     case whatsAppVideo = "WhatsApp Video"
+    case zoomMeeting = "Zoom Meeting"
+    case teamsMeeting = "Teams Meeting"
+    case telegramCall = "Telegram Call"
+    case slackHuddle = "Slack Huddle"
+    case webMeeting = "Online Meeting"
+    case other = "Voice Call"
     
     public var appType: CallAppType {
         switch self {
         case .cellular: return .normal
         case .facetimeAudio, .facetimeVideo: return .facetime
         case .whatsAppAudio, .whatsAppVideo: return .whatsApp
+        case .zoomMeeting: return .zoom
+        case .teamsMeeting: return .teams
+        case .telegramCall: return .telegram
+        case .slackHuddle: return .slack
+        case .webMeeting: return .meet
+        case .other: return .other
         }
     }
     
     public var isVideo: Bool {
-        return self == .facetimeVideo || self == .whatsAppVideo
+        switch self {
+        case .facetimeVideo, .whatsAppVideo, .zoomMeeting, .teamsMeeting, .webMeeting:
+            return true
+        default:
+            return false
+        }
     }
     
     public var displayTitle: String {
@@ -49,6 +84,12 @@ public enum CallCategory: String, Codable, Sendable, CaseIterable {
         case .facetimeVideo: return "FaceTime Video"
         case .whatsAppAudio: return "WhatsApp Audio"
         case .whatsAppVideo: return "WhatsApp Video"
+        case .zoomMeeting: return "Zoom Meeting"
+        case .teamsMeeting: return "Microsoft Teams"
+        case .telegramCall: return "Telegram Call"
+        case .slackHuddle: return "Slack Huddle"
+        case .webMeeting: return "Online Meeting"
+        case .other: return "Voice Call"
         }
     }
 }

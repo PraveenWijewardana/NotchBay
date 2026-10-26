@@ -183,11 +183,20 @@ public final class FileTransferService: ObservableObject {
             guard !downloadExtensions.contains(file.pathExtension.lowercased()) else { continue }
             
             if knownFiles[name] == nil {
-                // New file has completed!
-                let currentSize = Int64((try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+                let resourceValues = try? file.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .creationDateKey])
+                let currentSize = Int64(resourceValues?.fileSize ?? 0)
                 knownFiles[name] = currentSize
                 
-                let isAirDrop = (file.pathExtension.isEmpty || ["png", "jpg", "jpeg", "heic", "mov", "mp4", "pdf", "zip"].contains(file.pathExtension.lowercased()))
+                // Only alert if file was modified or created in the last 15 seconds
+                let modDate = resourceValues?.contentModificationDate ?? resourceValues?.creationDate ?? Date.distantPast
+                let isRecent = abs(Date().timeIntervalSince(modDate)) < 15.0
+                guard isRecent else { continue }
+                
+                let isAirDrop = Self.isAirDropFile(at: file)
+                let wasDownloading = (activeTransfer != nil && activeTransfer?.isCompleted == false)
+                
+                // Only show transfer alert if genuinely from AirDrop or completed an active browser download
+                guard isAirDrop || wasDownloading else { continue }
                 
                 let item = ActiveTransferItem(
                     filename: name,
@@ -216,6 +225,40 @@ public final class FileTransferService: ObservableObject {
                 return
             }
         }
+    }
+    
+    // MARK: - AirDrop Detection Verification
+    public static func isAirDropEnabled() -> Bool {
+        // AirDrop discoverability state in macOS is stored in com.apple.sharingd DiscoverableMode
+        if let mode = CFPreferencesCopyAppValue("DiscoverableMode" as CFString, "com.apple.sharingd" as CFString) as? String {
+            return mode.caseInsensitiveCompare("Off") != .orderedSame
+        }
+        return false
+    }
+    
+    public static func isAirDropFile(at url: URL) -> Bool {
+        // If AirDrop is turned Off, it is impossible for a file to have arrived via AirDrop
+        guard isAirDropEnabled() else { return false }
+        
+        let path = url.path
+        
+        // 1. Check for explicit com.apple.AirDrop extended attribute
+        var buffer = [CChar](repeating: 0, count: 256)
+        if getxattr(path, "com.apple.AirDrop", &buffer, buffer.count, 0, 0) > 0 {
+            return true
+        }
+        
+        // 2. Check for com.apple.quarantine attribute containing "sharingd"
+        var qBuffer = [CChar](repeating: 0, count: 1024)
+        let qLen = getxattr(path, "com.apple.quarantine", &qBuffer, qBuffer.count, 0, 0)
+        if qLen > 0 {
+            let qStr = String(cString: qBuffer)
+            if qStr.localizedCaseInsensitiveContains("sharingd") || qStr.localizedCaseInsensitiveContains("airdrop") {
+                return true
+            }
+        }
+        
+        return false
     }
     
     private func getDownloadMetrics(for url: URL) -> (current: Int64, total: Int64, filename: String) {

@@ -236,16 +236,99 @@ public final class CallService: ObservableObject {
         autoDetectTimer = nil
     }
     
-    // MARK: - Core Call Detection Logic (Optimized for Ultra-Low CPU)
+    // MARK: - Core Call Detection Logic (Direct Accessibility Engine)
     public func checkRealTimeCallStatus() {
-        // Fast-path: only proceed if at least one candidate app is running
-        guard isWhatsAppRunning || isFaceTimeRunning || isPhoneContinuityRunning else {
+        guard AppSettings.shared.enableCallDetection else {
             if isAutoDetectedSession, currentCall != nil, currentCall?.status != .ended {
                 isAutoDetectedSession = false
                 endCall()
             }
             return
         }
+        
+        let runningApps = NSWorkspace.shared.runningApplications
+        
+        // Define known candidate calling applications
+        struct CandidateDef {
+            let matches: (NSRunningApplication) -> Bool
+            let appType: CallAppType
+            let defaultCategory: CallCategory
+        }
+        
+        let candidates: [CandidateDef] = [
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("incallservice") || name.contains("incallservice") || id.contains("callservices")
+                },
+                appType: .normal,
+                defaultCategory: .cellular
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("facetime") || name.contains("facetime")
+                },
+                appType: .facetime,
+                defaultCategory: .facetimeAudio
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("whatsapp") || name.contains("whatsapp")
+                },
+                appType: .whatsApp,
+                defaultCategory: .whatsAppAudio
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("us.zoom.xos") || id.contains("zoom.us") || name.contains("zoom")
+                },
+                appType: .zoom,
+                defaultCategory: .zoomMeeting
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("com.microsoft.teams") || name.contains("teams")
+                },
+                appType: .teams,
+                defaultCategory: .teamsMeeting
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("telegram") || name.contains("telegram")
+                },
+                appType: .telegram,
+                defaultCategory: .telegramCall
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("slack") || name.contains("slack")
+                },
+                appType: .slack,
+                defaultCategory: .slackHuddle
+            ),
+            CandidateDef(
+                matches: { app in
+                    let id = app.bundleIdentifier?.lowercased() ?? ""
+                    let name = app.localizedName?.lowercased() ?? ""
+                    return id.contains("chrome") || id.contains("safari") || id.contains("brave") || id.contains("arc")
+                },
+                appType: .meet,
+                defaultCategory: .webMeeting
+            )
+        ]
         
         var detectedInfo: (
             category: CallCategory,
@@ -258,71 +341,30 @@ public final class CallService: ObservableObject {
             muteBtn: AXUIElement?
         )? = nil
         
-        // 1. Fast Primary Engine: CGWindowList check (<0.05ms, zero AX IPC overhead)
-        guard let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
-            return
-        }
-        
-        var activeCallWindowPID: pid_t? = nil
-        var isCandidateCallActive = false
-        
-        for win in windowList {
-            guard let owner = win[kCGWindowOwnerName as String] as? String else { continue }
-            let ownerLower = owner.lowercased()
-            let title = (win[kCGWindowName as String] as? String) ?? ""
-            let titleLower = title.lowercased()
-            let pid = (win[kCGWindowOwnerPID as String] as? Int32) ?? 0
+        for cand in candidates {
+            guard let app = runningApps.first(where: cand.matches) else { continue }
+            let pid = app.processIdentifier
+            let appElement = AXUIElementCreateApplication(pid)
             
-            if ownerLower.contains("whatsapp") {
-                if titleLower.contains("call") || titleLower.contains("calling") || titleLower.contains("incoming") || titleLower.contains("ringing") {
-                    let isVideo = titleLower.contains("video")
-                    let isIncoming = titleLower.contains("incoming") || titleLower.contains("ringing")
-                    var clean = title.replacingOccurrences(of: "WhatsApp Call with ", with: "")
-                        .replacingOccurrences(of: "WhatsApp Call", with: "")
-                        .replacingOccurrences(of: "Call with ", with: "")
-                        .replacingOccurrences(of: "Calling ", with: "")
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                    if clean.isEmpty { clean = "WhatsApp Contact" }
-                    detectedInfo = (isVideo ? .whatsAppVideo : .whatsAppAudio, clean, "", isIncoming, pid, nil, nil, nil)
-                    activeCallWindowPID = pid
-                    isCandidateCallActive = true
-                    break
-                }
-            } else if ownerLower.contains("facetime") || ownerLower.contains("callservices") || ownerLower.contains("incallservice") {
-                if titleLower.contains("call") || titleLower.contains("facetime") || titleLower.contains("with ") || titleLower.contains("incoming") || titleLower.contains("ringing") {
-                    let isVideo = titleLower.contains("video")
-                    let isIncoming = titleLower.contains("incoming") || titleLower.contains("ringing")
-                    var clean = title.replacingOccurrences(of: "FaceTime with ", with: "")
-                        .replacingOccurrences(of: "FaceTime", with: "")
-                        .replacingOccurrences(of: "Call with ", with: "")
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                    if clean.isEmpty { clean = "Phone Contact" }
-                    detectedInfo = (isVideo ? .facetimeVideo : .cellular, clean, "", isIncoming, pid, nil, nil, nil)
-                    activeCallWindowPID = pid
-                    isCandidateCallActive = true
-                    break
-                }
+            var windowsRef: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+                  let windows = windowsRef as? [AXUIElement], !windows.isEmpty else {
+                continue
             }
-        }
-        
-        // If no call window exists on screen, clean up and return immediately without AX overhead
-        guard isCandidateCallActive, let targetPID = activeCallWindowPID else {
-            if isAutoDetectedSession, currentCall != nil, currentCall?.status != .ended {
-                isAutoDetectedSession = false
-                endCall()
-            }
-            return
-        }
-        
-        // 2. Secondary Engine: Only inspect AX buttons for the single active call PID
-        let appElement = AXUIElementCreateApplication(targetPID)
-        var windowsRef: CFTypeRef?
-        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-           let windows = windowsRef as? [AXUIElement] {
-            for win in windows.prefix(2) {
+            
+            let isInCallService = (cand.appType == .normal)
+            
+            for win in windows.prefix(6) {
+                var titleRef: CFTypeRef?
+                var windowTitle = ""
+                if AXUIElementCopyAttributeValue(win, kAXTitleAttribute as CFString, &titleRef) == .success,
+                   let t = titleRef as? String {
+                    windowTitle = t
+                }
+                
                 var buttons: [(role: String, title: String, element: AXUIElement)] = []
                 var extractedTexts: [String] = []
-                scanAXUIElement(win, depth: 0, maxDepth: 3, extractedTexts: &extractedTexts, buttons: &buttons)
+                scanAXUIElement(win, depth: 0, maxDepth: 4, extractedTexts: &extractedTexts, buttons: &buttons)
                 
                 let acceptBtn = buttons.first { b in
                     let lower = b.title.lowercased()
@@ -339,58 +381,79 @@ public final class CallService: ObservableObject {
                     return lower.contains("mute") || lower.contains("mic")
                 }?.element
                 
-                if let info = detectedInfo {
-                    detectedInfo = (
-                        category: info.category,
-                        contactName: info.contactName,
-                        numberOrHandle: info.numberOrHandle,
-                        isIncoming: (acceptBtn != nil) || info.isIncoming,
-                        pid: info.pid,
-                        acceptBtn: acceptBtn ?? info.acceptBtn,
-                        declineBtn: declineBtn ?? info.declineBtn,
-                        muteBtn: muteBtn ?? info.muteBtn
-                    )
-                }
-                if acceptBtn != nil || declineBtn != nil { break }
-            }
-        }
-        
-        // 2. Secondary Engine: Screen Capture / CGWindowList fallback
-        if detectedInfo == nil, let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] {
-            for win in windowList {
-                guard let owner = win[kCGWindowOwnerName as String] as? String else { continue }
-                let ownerLower = owner.lowercased()
-                let title = (win[kCGWindowName as String] as? String) ?? ""
-                let titleLower = title.lowercased()
-                let pid = (win[kCGWindowOwnerPID as String] as? Int32) ?? 0
+                let titleLower = windowTitle.lowercased()
                 
-                if ownerLower.contains("whatsapp") {
-                    if titleLower.contains("call") || titleLower.contains("calling") || titleLower.contains("incoming") {
-                        let isVideo = titleLower.contains("video")
-                        let isIncoming = titleLower.contains("incoming") || titleLower.contains("ringing")
-                        var clean = title.replacingOccurrences(of: "WhatsApp Call with ", with: "")
-                            .replacingOccurrences(of: "WhatsApp Call", with: "")
-                            .replacingOccurrences(of: "Call with ", with: "")
-                            .replacingOccurrences(of: "Calling ", with: "")
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        if clean.isEmpty { clean = "WhatsApp Contact" }
-                        detectedInfo = (isVideo ? .whatsAppVideo : .whatsAppAudio, clean, "", isIncoming, pid, nil, nil, nil)
-                        break
+                // Detection criteria
+                var isCallWindow = false
+                var isIncoming = (acceptBtn != nil)
+                
+                if isInCallService {
+                    isCallWindow = true
+                } else if cand.appType == .meet {
+                    if titleLower.contains("meet - ") || titleLower.contains("meet.google.com") || titleLower.contains("zoom meeting") {
+                        if declineBtn != nil || muteBtn != nil || titleLower.contains("meeting") {
+                            isCallWindow = true
+                        }
                     }
-                } else if ownerLower.contains("facetime") || ownerLower.contains("callservices") || ownerLower.contains("incallservice") {
-                    if titleLower.contains("call") || titleLower.contains("facetime") || titleLower.contains("with ") {
-                        let isVideo = titleLower.contains("video")
-                        let isIncoming = titleLower.contains("incoming") || titleLower.contains("ringing")
-                        var clean = title.replacingOccurrences(of: "FaceTime with ", with: "")
-                            .replacingOccurrences(of: "FaceTime", with: "")
-                            .replacingOccurrences(of: "Call with ", with: "")
-                            .trimmingCharacters(in: .whitespacesAndNewlines)
-                        if clean.isEmpty { clean = "Phone Contact" }
-                        detectedInfo = (isVideo ? .facetimeVideo : .cellular, clean, "", isIncoming, pid, nil, nil, nil)
-                        break
+                } else {
+                    let hasCallKeyword = titleLower.contains("call") ||
+                                         titleLower.contains("calling") ||
+                                         titleLower.contains("incoming") ||
+                                         titleLower.contains("ringing") ||
+                                         titleLower.contains("meeting") ||
+                                         titleLower.contains("huddle") ||
+                                         titleLower.contains("facetime")
+                    
+                    if acceptBtn != nil || declineBtn != nil {
+                        isCallWindow = true
+                    } else if hasCallKeyword && (muteBtn != nil || !extractedTexts.isEmpty) {
+                        isCallWindow = true
                     }
                 }
+                
+                if titleLower.contains("incoming") || titleLower.contains("ringing") {
+                    isIncoming = true
+                }
+                
+                if isCallWindow {
+                    let isVideo = titleLower.contains("video") ||
+                                  extractedTexts.contains { $0.lowercased().contains("video") } ||
+                                  cand.defaultCategory.isVideo
+                    
+                    let category: CallCategory
+                    switch cand.appType {
+                    case .normal: category = .cellular
+                    case .facetime: category = isVideo ? .facetimeVideo : .facetimeAudio
+                    case .whatsApp: category = isVideo ? .whatsAppVideo : .whatsAppAudio
+                    case .zoom: category = .zoomMeeting
+                    case .teams: category = .teamsMeeting
+                    case .telegram: category = .telegramCall
+                    case .slack: category = .slackHuddle
+                    case .meet: category = .webMeeting
+                    case .other: category = .other
+                    }
+                    
+                    let (name, number) = extractCallerIdentifier(
+                        windowTitle: windowTitle,
+                        extractedTexts: extractedTexts,
+                        appType: cand.appType
+                    )
+                    
+                    detectedInfo = (
+                        category: category,
+                        contactName: name,
+                        numberOrHandle: number,
+                        isIncoming: isIncoming,
+                        pid: pid,
+                        acceptBtn: acceptBtn,
+                        declineBtn: declineBtn,
+                        muteBtn: muteBtn
+                    )
+                    break
+                }
             }
+            
+            if detectedInfo != nil { break }
         }
         
         // MARK: - State Application
@@ -510,16 +573,18 @@ public final class CallService: ObservableObject {
     private func extractCallerIdentifier(
         windowTitle: String,
         extractedTexts: [String],
-        isWhatsApp: Bool
+        appType: CallAppType
     ) -> (name: String, number: String) {
         let blacklist = [
             "incoming call", "calling", "ringing", "facetime audio", "facetime video",
             "iphone cellular call", "cellular call", "facetime", "whatsapp call",
             "whatsapp video call", "whatsapp", "accept", "decline", "answer", "end call",
-            "mute", "audio", "video", "leave", "hang up", "00:00", "connected"
+            "mute", "unmute", "audio", "video", "leave", "hang up", "00:00", "connected",
+            "zoom", "zoom meeting", "teams", "microsoft teams", "meeting", "huddle",
+            "slack", "telegram", "google meet", "close", "minimize", "maximize"
         ]
         
-        // 1. Check window title
+        // 1. Clean window title
         let cleanTitle = windowTitle
             .replacingOccurrences(of: "WhatsApp Call with ", with: "")
             .replacingOccurrences(of: "WhatsApp Call", with: "")
@@ -527,6 +592,9 @@ public final class CallService: ObservableObject {
             .replacingOccurrences(of: "FaceTime", with: "")
             .replacingOccurrences(of: "Call with ", with: "")
             .replacingOccurrences(of: "Calling ", with: "")
+            .replacingOccurrences(of: "Zoom Meeting - ", with: "")
+            .replacingOccurrences(of: "Meet - ", with: "")
+            .replacingOccurrences(of: " | Microsoft Teams", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         if !cleanTitle.isEmpty && !blacklist.contains(cleanTitle.lowercased()) {
@@ -551,7 +619,19 @@ public final class CallService: ObservableObject {
             }
         }
         
-        return (isWhatsApp ? "WhatsApp Contact" : "Phone Contact", "")
+        let defaultName: String
+        switch appType {
+        case .normal: defaultName = "Phone Contact"
+        case .facetime: defaultName = "FaceTime Contact"
+        case .whatsApp: defaultName = "WhatsApp Contact"
+        case .zoom: defaultName = "Zoom Meeting"
+        case .teams: defaultName = "Teams Meeting"
+        case .telegram: defaultName = "Telegram Contact"
+        case .slack: defaultName = "Slack Huddle"
+        case .meet: defaultName = "Google Meet"
+        case .other: defaultName = "Incoming Call"
+        }
+        return (defaultName, "")
     }
     
     // MARK: - Call Actions

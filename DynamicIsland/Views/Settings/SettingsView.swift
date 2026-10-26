@@ -740,6 +740,22 @@ public struct SettingsView: View {
                     
                     Divider().background(Color.white.opacity(0.08))
                     
+                    toggleRow(
+                        title: "AirDrop Receipt HUD",
+                        subtitle: "Notify when genuine AirDrop transfers arrive (requires AirDrop to be enabled).",
+                        isOn: $settings.enableAirDropAlerts
+                    )
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    toggleRow(
+                        title: "Auto-Detect Incoming & Active Calls",
+                        subtitle: "Detect and display Phone, FaceTime, WhatsApp, Zoom, Teams, and Slack calls in the Dynamic Island.",
+                        isOn: $settings.enableCallDetection
+                    )
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text("HUD Banner Duration")

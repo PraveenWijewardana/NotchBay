@@ -13,37 +13,39 @@ public struct ExpandedIslandView: View {
     
     public var body: some View {
         VStack(spacing: 8) {
-            // MARK: - Top Bar (Navigation on Left & Right Ears, Notch Clearance in Center)
-            HStack(alignment: .center) {
-                // Left Ear: Primary Navigation Tabs (Home, System, Timers, Music, Shelf, Weather)
+            // MARK: - Top Bar (Symmetrical Navigation on Left & Right Ears, Notch Clearance in Center)
+            HStack(alignment: .center, spacing: 6) {
+                // Left Ear: Primary Dashboard Tabs (Home, System, Timers, Music)
                 HStack(spacing: 4) {
                     topTabButton(index: 0, icon: "house.fill", title: "Home")
                     topTabButton(index: 1, icon: "gauge.with.needle.fill", title: "System")
                     topTabButton(index: 2, icon: "timer", title: "Timers & Stopwatch")
                     topTabButton(index: 3, icon: "music.note", title: "Now Playing")
+                }
+                .padding(.horizontal, 5)
+                .padding(.vertical, 3.5)
+                .background(Color.white.opacity(0.08))
+                .clipShape(Capsule())
+                .fixedSize(horizontal: true, vertical: false)
+                
+                // Camera Notch Clearance Spacer
+                Spacer(minLength: max(30, min(100, viewModel.physicalNotchWidth - 80)))
+                
+                // Right Ear: Workflow Tabs (Drop Shelf, AI Agents, Calendar, Weather)
+                HStack(spacing: 4) {
                     topTabButton(index: 4, icon: "tray.fill", title: "Drop Shelf")
+                    topTabButton(index: 5, icon: "sparkles", title: "Code Agents (AI)")
+                    topTabButton(index: 6, icon: "calendar", title: "Calendar")
                     topTabButton(index: 7, icon: "cloud.sun.fill", title: "Weather")
                 }
                 .padding(.horizontal, 5)
                 .padding(.vertical, 3.5)
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())
+                .fixedSize(horizontal: true, vertical: false)
                 
-                Spacer(minLength: max(90, viewModel.physicalNotchWidth - 40))
-                
-                // Right Ear: AI & Calendar Tabs + Utility Buttons (Lock, Bell, Settings)
-                HStack(spacing: 5) {
-                    // AI / Code Agents (index 5)
-                    topTabButton(index: 5, icon: "sparkles", title: "Code Agents (AI)")
-                    
-                    // Calendar (index 6)
-                    topTabButton(index: 6, icon: "calendar", title: "Calendar")
-                    
-                    Rectangle()
-                        .fill(Color.white.opacity(0.18))
-                        .frame(width: 1, height: 14)
-                        .padding(.horizontal, 1)
-                    
+                // Utility Actions Capsule (Caffeine, Lock Screen, Settings)
+                HStack(spacing: 4) {
                     // Caffeine Sleep Prevention Button with Presets Menu
                     Menu {
                         Button("Keep Awake Indefinitely") {
@@ -68,7 +70,7 @@ public struct ExpandedIslandView: View {
                             }
                         }
                     } label: {
-                        HStack(spacing: 3) {
+                        HStack(spacing: 2.5) {
                             Image(systemName: viewModel.caffeineService.isActive ? "cup.and.saucer.fill" : "cup.and.saucer")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(viewModel.caffeineService.isActive ? .orange : .white.opacity(0.85))
@@ -81,7 +83,7 @@ public struct ExpandedIslandView: View {
                                     .foregroundColor(.orange)
                             }
                         }
-                        .padding(.horizontal, viewModel.caffeineService.isActive ? 5 : 2)
+                        .padding(.horizontal, viewModel.caffeineService.isActive ? 4 : 2)
                         .frame(height: 22)
                         .background(viewModel.caffeineService.isActive ? Color.orange.opacity(0.18) : Color.clear)
                         .clipShape(Capsule())
@@ -118,10 +120,11 @@ public struct ExpandedIslandView: View {
                     .buttonStyle(.plain)
                     .help("Open Settings Window (⌘,)")
                 }
-                .padding(.horizontal, 6)
+                .padding(.horizontal, 5)
                 .padding(.vertical, 3.5)
                 .background(Color.white.opacity(0.08))
                 .clipShape(Capsule())
+                .fixedSize(horizontal: true, vertical: false)
             }
             .padding(.horizontal, 4)
             .padding(.top, 4)
