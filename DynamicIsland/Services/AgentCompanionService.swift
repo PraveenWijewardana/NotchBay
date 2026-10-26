@@ -43,6 +43,7 @@ public final class AgentCompanionService: ObservableObject {
     
     public var onPermissionRequested: ((AgentPermissionRequest) -> Void)?
     public var onTaskCompleted: ((CodeAgentType, String) -> Void)?
+    public var onTaskFailed: ((CodeAgentType, String) -> Void)?
     
     public init() {
         startLocalServer()
@@ -301,6 +302,7 @@ public final class AgentCompanionService: ObservableObject {
     public func reportError(agent: CodeAgentType, message: String) {
         self.selectedAgent = agent
         self.status = .error
+        self.statusByAgent[agent] = .error
         self.currentMessage = message
         self.activePermissionRequest = nil
         stopTurnTimer()
@@ -310,12 +312,16 @@ public final class AgentCompanionService: ObservableObject {
             at: 0
         )
         NSSound(named: "Basso")?.play()
+        
+        // Notify delegate to open Dynamic Island HUD
+        onTaskFailed?(agent, message)
     }
     
     public func approveRequest(id: String) {
         guard let req = activePermissionRequest, req.id == id else { return }
         self.activePermissionRequest = nil
         self.status = .executing
+        self.statusByAgent[req.agent] = .executing
         self.currentMessage = "Executing approved command..."
         startTurnTimer()
         
@@ -324,18 +330,33 @@ public final class AgentCompanionService: ObservableObject {
             at: 0
         )
         NSSound(named: "Hero")?.play()
+        
+        DistributedNotificationCenter.default().postNotificationName(
+            NSNotification.Name("com.dynamicisland.agent.approval_response"),
+            object: nil,
+            userInfo: ["id": id, "approved": true, "agent": req.agent.rawValue],
+            deliverImmediately: true
+        )
     }
     
     public func denyRequest(id: String) {
         guard let req = activePermissionRequest, req.id == id else { return }
         self.activePermissionRequest = nil
         self.status = .idle
+        self.statusByAgent[req.agent] = .idle
         self.currentMessage = "Command Denied"
         stopTurnTimer()
         
         activityLog.insert(
             AgentActivityItem(agent: req.agent, status: .error, message: "Denied: \(req.actionOrTool)"),
             at: 0
+        )
+        
+        DistributedNotificationCenter.default().postNotificationName(
+            NSNotification.Name("com.dynamicisland.agent.approval_response"),
+            object: nil,
+            userInfo: ["id": id, "approved": false, "agent": req.agent.rawValue],
+            deliverImmediately: true
         )
     }
     

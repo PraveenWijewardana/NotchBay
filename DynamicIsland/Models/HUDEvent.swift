@@ -7,6 +7,7 @@ public enum HUDEventType: Equatable, Sendable {
     case track(title: String, artist: String)
     case agentPermission(agent: CodeAgentType, requestId: String, action: String)
     case agentFinished(agent: CodeAgentType, message: String)
+    case agentError(agent: CodeAgentType, message: String)
     case caffeine(isActive: Bool, presetTitle: String)
     case magSafe(level: Int, isPluggedIn: Bool, timeRemaining: String?)
     case fileTransfer(name: String, progress: Double, isAirDrop: Bool, isCompleted: Bool, currentBytes: Int64 = 0, totalBytes: Int64 = -1, speedStr: String = "")

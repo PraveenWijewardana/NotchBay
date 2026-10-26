@@ -102,7 +102,7 @@ public struct IslandHUDView: View {
                         }
                     }
                     
-                case .agentPermission(_, let reqId, _):
+                case .agentPermission(_, let reqId, let action):
                     // Interactive Action Buttons right inside the Notch HUD
                     HStack(spacing: 6) {
                         Button {
@@ -137,14 +137,26 @@ public struct IslandHUDView: View {
                         .buttonStyle(.plain)
                     }
                     
-                case .agentFinished:
+                case .agentFinished(_, let message):
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.green)
-                        Text("Finished")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                        Text(message.isEmpty ? "Complete" : message)
+                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
                             .foregroundColor(.green)
+                            .lineLimit(1)
+                    }
+                    
+                case .agentError(_, let message):
+                    HStack(spacing: 4) {
+                        Image(systemName: "xmark.octagon.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.red)
+                        Text(message.isEmpty ? "Failed" : message)
+                            .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.red)
+                            .lineLimit(1)
                     }
                     
                 case .focus(let isActive, let sessionTitle, _):
@@ -179,7 +191,7 @@ public struct IslandHUDView: View {
                     }
                 }
             }
-            .frame(width: 110, alignment: .trailing)
+            .frame(width: 120, alignment: .trailing)
             .padding(.trailing, 12)
         }
         .frame(height: max(viewModel.physicalNotchHeight + 8.0, 44))
@@ -187,6 +199,12 @@ public struct IslandHUDView: View {
         .onTapGesture {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
                 if case .agentPermission = alert.type {
+                    viewModel.selectedPageIndex = 5 // Jump to Agent tab
+                    viewModel.setExpanded(true)
+                } else if case .agentFinished = alert.type {
+                    viewModel.selectedPageIndex = 5 // Jump to Agent tab
+                    viewModel.setExpanded(true)
+                } else if case .agentError = alert.type {
                     viewModel.selectedPageIndex = 5 // Jump to Agent tab
                     viewModel.setExpanded(true)
                 } else if case .fileTransfer = alert.type {
@@ -273,6 +291,16 @@ public struct IslandHUDView: View {
                     .foregroundColor(.green)
             }
             
+        case .agentError(let agent, _):
+            ZStack {
+                Circle()
+                    .fill(Color.red.opacity(0.25))
+                    .frame(width: 22, height: 22)
+                Image(systemName: agent.iconName)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(.red)
+            }
+            
         case .caffeine(let isActive, _):
             ZStack {
                 Circle()
@@ -329,6 +357,9 @@ public struct IslandHUDView: View {
         case .agentFinished:
             return LinearGradient(colors: [.green, .teal], startPoint: .leading, endPoint: .trailing)
             
+        case .agentError:
+            return LinearGradient(colors: [.red, .orange], startPoint: .leading, endPoint: .trailing)
+            
         case .caffeine(let isActive, _):
             return isActive
                 ? LinearGradient(colors: [.orange, .yellow], startPoint: .leading, endPoint: .trailing)
@@ -359,6 +390,8 @@ public struct IslandHUDView: View {
             return .yellow
         case .agentFinished:
             return .green
+        case .agentError:
+            return .red
         case .caffeine(let isActive, _):
             return isActive ? .orange : .white
         case .focus(let isActive, _, _):

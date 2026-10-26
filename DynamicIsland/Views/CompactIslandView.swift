@@ -62,16 +62,12 @@ public struct CompactIslandView: View {
         .frame(height: viewModel.compactHeight)
         .contentShape(Rectangle())
         .onDrop(of: [.fileURL, .text, .image], isTargeted: nil) { _ in
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                viewModel.selectedPageIndex = 4
-                viewModel.state = .expanded
-            }
+            viewModel.selectedPageIndex = 4
+            viewModel.setExpanded(true)
             return true
         }
         .onTapGesture {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                viewModel.state = .expanded
-            }
+            viewModel.setExpanded(true)
         }
     }
     
@@ -245,10 +241,8 @@ public struct CompactIslandView: View {
                 .buttonStyle(.plain)
             } else if viewModel.agentService.status == .awaitingPermission {
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        viewModel.selectedPageIndex = 5
-                        viewModel.state = .expanded
-                    }
+                    viewModel.selectedPageIndex = 5
+                    viewModel.setExpanded(true)
                 } label: {
                     HStack(spacing: 3.5) {
                         Image(systemName: "exclamationmark.shield.fill")
@@ -265,10 +259,8 @@ public struct CompactIslandView: View {
                 .buttonStyle(.plain)
             } else if viewModel.agentService.status == .executing || viewModel.agentService.status == .coding {
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        viewModel.selectedPageIndex = 5
-                        viewModel.state = .expanded
-                    }
+                    viewModel.selectedPageIndex = 5
+                    viewModel.setExpanded(true)
                 } label: {
                     HStack(spacing: 3.5) {
                         Image(systemName: viewModel.agentService.selectedAgent.iconName)
@@ -285,10 +277,8 @@ public struct CompactIslandView: View {
                 .buttonStyle(.plain)
             } else if viewModel.agentService.status == .thinking {
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        viewModel.selectedPageIndex = 5
-                        viewModel.state = .expanded
-                    }
+                    viewModel.selectedPageIndex = 5
+                    viewModel.setExpanded(true)
                 } label: {
                     HStack(spacing: 3.5) {
                         Image(systemName: "brain")
@@ -305,10 +295,8 @@ public struct CompactIslandView: View {
                 .buttonStyle(.plain)
             } else if viewModel.agentService.status == .completed {
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                        viewModel.selectedPageIndex = 5
-                        viewModel.state = .expanded
-                    }
+                    viewModel.selectedPageIndex = 5
+                    viewModel.setExpanded(true)
                 } label: {
                     HStack(spacing: 3.5) {
                         Image(systemName: "checkmark.circle.fill")
@@ -318,6 +306,24 @@ public struct CompactIslandView: View {
                         Text("Done")
                             .font(.system(size: 10, weight: .bold, design: .rounded))
                             .foregroundColor(.green)
+                    }
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
+            } else if viewModel.agentService.status == .error {
+                Button {
+                    viewModel.selectedPageIndex = 5
+                    viewModel.setExpanded(true)
+                } label: {
+                    HStack(spacing: 3.5) {
+                        Image(systemName: "xmark.octagon.fill")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.red)
+                            .shadow(color: .red.opacity(0.6), radius: 2)
+                        Text("Error")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(.red)
                     }
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)

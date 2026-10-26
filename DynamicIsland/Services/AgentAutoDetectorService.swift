@@ -452,6 +452,9 @@ public final class AgentAutoDetectorService: ObservableObject {
             if status == "DONE" && toolCalls.isEmpty && !content.isEmpty {
                 let shortMsg = String(content.prefix(120))
                 companion?.completeTask(agent: .antigravity, message: shortMsg)
+            } else if status == "ERROR" {
+                let shortMsg = content.isEmpty ? "Agent execution error" : String(content.prefix(120))
+                companion?.reportError(agent: .antigravity, message: shortMsg)
             } else if let firstTool = toolCalls.first {
                 let toolAction = firstTool["toolAction"] as? String
                 let toolSummary = firstTool["toolSummary"] as? String
@@ -699,7 +702,11 @@ public final class AgentAutoDetectorService: ObservableObject {
             consecutiveIdleTicks[prev] = idleCount
             
             if idleCount >= 2 {
-                companion?.updateSilentStatus(agent: prev, status: .idle, message: "Idle & Ready")
+                if companion?.status(for: prev).isBusy == true {
+                    companion?.completeTask(agent: prev, message: "\(prev.rawValue) finished")
+                } else {
+                    companion?.updateSilentStatus(agent: prev, status: .idle, message: "Idle & Ready")
+                }
                 lastActiveAgent = nil
             }
         }

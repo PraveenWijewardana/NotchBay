@@ -71,16 +71,48 @@ public struct NotchContainerView: View {
             Group {
                 if viewModel.state == .expanded {
                     ExpandedIslandView(viewModel: viewModel)
-                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity
+                                    .combined(with: .scale(scale: 0.94, anchor: .top))
+                                    .combined(with: .offset(y: -6)),
+                                removal: .opacity
+                                    .combined(with: .scale(scale: 0.96, anchor: .top))
+                                    .combined(with: .offset(y: -4))
+                            )
+                        )
                 } else if viewModel.state == .call, let call = viewModel.callService.currentCall {
                     CallIslandBannerView(viewModel: viewModel, call: call)
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity
+                                    .combined(with: .scale(scale: 0.94, anchor: .top))
+                                    .combined(with: .offset(y: -4)),
+                                removal: .opacity
+                                    .combined(with: .scale(scale: 0.96, anchor: .top))
+                            )
+                        )
                 } else if viewModel.state == .hud, let alert = viewModel.currentHUDAlert {
                     IslandHUDView(viewModel: viewModel, alert: alert)
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity
+                                    .combined(with: .scale(scale: 0.94, anchor: .top))
+                                    .combined(with: .offset(y: -4)),
+                                removal: .opacity
+                                    .combined(with: .scale(scale: 0.96, anchor: .top))
+                            )
+                        )
                 } else {
                     CompactIslandView(viewModel: viewModel)
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity
+                                    .combined(with: .scale(scale: 0.95, anchor: .top)),
+                                removal: .opacity
+                                    .combined(with: .scale(scale: 0.90, anchor: .top))
+                            )
+                        )
                 }
             }
         }
@@ -93,8 +125,8 @@ public struct NotchContainerView: View {
                 style: .continuous
             )
         )
-        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: viewModel.state)
-        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: viewModel.isHovering)
+        .animation(NotchViewModel.spring(for: viewModel.state), value: viewModel.state)
+        .animation(.spring(response: 0.28, dampingFraction: 0.76), value: viewModel.isHovering)
     }
     
     // MARK: - Dynamic Border & Glow
@@ -164,6 +196,12 @@ public struct NotchContainerView: View {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
+            case .agentError:
+                return LinearGradient(
+                    colors: [Color.red.opacity(0.6), Color.orange.opacity(0.5)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
             }
         }
         
@@ -202,6 +240,8 @@ public struct NotchContainerView: View {
                 return Color.orange.opacity(0.5)
             case .agentFinished:
                 return Color.green.opacity(0.5)
+            case .agentError:
+                return Color.red.opacity(0.5)
             case .caffeine(let isActive, _):
                 return isActive ? Color.orange.opacity(0.5) : Color.clear
             case .magSafe:

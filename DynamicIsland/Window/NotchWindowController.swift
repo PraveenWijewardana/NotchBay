@@ -133,11 +133,24 @@ public final class NotchWindowController: NSObject, ObservableObject {
             panel.orderFrontRegardless()
         }
         let targetFrame = calculateFrame(state: state)
+        if panel.frame.equalTo(targetFrame) {
+            return
+        }
+        
+        let isExpanding = (state == .expanded)
+        let duration: TimeInterval = isExpanding ? 0.38 : 0.30
         
         // Fluid Apple cubic spring animation pulling UP into the notch or dropping down smoothly
+        // Opening: slight elastic overshoot (1.05) that settles like fluid glass
+        // Closing: crisp, smooth deceleration (zero overshoot) tucking cleanly into the notch
+        let timing: CAMediaTimingFunction = isExpanding
+            ? CAMediaTimingFunction(controlPoints: 0.18, 0.88, 0.28, 1.05)
+            : CAMediaTimingFunction(controlPoints: 0.25, 1.0, 0.28, 1.0)
+        
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.32
-            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
+            context.duration = duration
+            context.timingFunction = timing
+            context.allowsImplicitAnimation = true
             panel.animator().setFrame(targetFrame, display: true)
         }
     }
@@ -174,8 +187,8 @@ public final class NotchWindowController: NSObject, ObservableObject {
             width = max(460.0, physicalNotchWidth + 240.0)
             height = notchHeight + 62.0
         case .hud:
-            let earWidth: CGFloat = 120.0
-            width = max(440.0, physicalNotchWidth + (earWidth * 2.0) + 16.0)
+            let earWidth: CGFloat = 130.0
+            width = max(460.0, physicalNotchWidth + (earWidth * 2.0) + 16.0)
             height = max(notchHeight + 8.0, 44.0)
         case .compact:
             // Symmetrical compact ears from user settings

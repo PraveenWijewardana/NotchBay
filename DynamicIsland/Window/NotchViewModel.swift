@@ -154,15 +154,15 @@ public final class NotchViewModel: ObservableObject {
             }
             .store(in: &cancellables)
             
-        // Wire up Agent Companion triggers (Permission requests & Task completions)
+        // Wire up Agent Companion triggers (Permission requests, Task completions, Task failures)
         agentService.onPermissionRequested = { [weak self] req in
             self?.presentHUD(
                 HUDAlert(
                     type: .agentPermission(agent: req.agent, requestId: req.id, action: req.actionOrTool),
                     title: req.agent.rawValue,
-                    subtitle: "Permission Required",
+                    subtitle: req.actionOrTool.isEmpty ? "Permission Required" : req.actionOrTool,
                     icon: req.agent.iconName,
-                    duration: 8.0
+                    duration: 15.0
                 )
             )
         }
@@ -172,9 +172,21 @@ public final class NotchViewModel: ObservableObject {
                 HUDAlert(
                     type: .agentFinished(agent: agent, message: message),
                     title: agent.rawValue,
-                    subtitle: "Task Complete",
+                    subtitle: message.isEmpty ? "Task Complete" : message,
                     icon: "checkmark.seal.fill",
-                    duration: 4.0
+                    duration: 4.5
+                )
+            )
+        }
+        
+        agentService.onTaskFailed = { [weak self] agent, message in
+            self?.presentHUD(
+                HUDAlert(
+                    type: .agentError(agent: agent, message: message),
+                    title: agent.rawValue,
+                    subtitle: message.isEmpty ? "Task Failed" : message,
+                    icon: "xmark.octagon.fill",
+                    duration: 5.0
                 )
             )
         }
@@ -304,6 +316,11 @@ public final class NotchViewModel: ObservableObject {
             let timer = Timer(timeInterval: alert.duration, repeats: false) { [weak self] _ in
                 Task { @MainActor [weak self] in
                     guard let self = self else { return }
+                    // Keep approval banner visible until approved or denied
+                    if case .agentPermission = self.currentHUDAlert?.type,
+                       self.agentService.activePermissionRequest != nil {
+                        return
+                    }
                     if self.state == .hud && self.currentHUDAlert?.id == alert.id {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                             self.state = .compact
@@ -342,12 +359,27 @@ public final class NotchViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Apple Fluid Dynamic Island Spring Animations
+    public static var expandSpring: Animation {
+        .spring(response: 0.38, dampingFraction: 0.78, blendDuration: 0.08)
+    }
+    
+    public static var collapseSpring: Animation {
+        .spring(response: 0.30, dampingFraction: 0.86, blendDuration: 0.06)
+    }
+    
+    public static func spring(for state: IslandPresentationState) -> Animation {
+        state == .expanded ? expandSpring : collapseSpring
+    }
+    
     public func toggleExpand() {
         if SettingsWindowController.shared.isSettingsOpen {
             return
         }
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-            state = (state == .compact || state == .hud) ? .expanded : .compact
+        let targetState: IslandPresentationState = (state == .compact || state == .hud) ? .expanded : .compact
+        let anim = (targetState == .expanded) ? Self.expandSpring : Self.collapseSpring
+        withAnimation(anim) {
+            state = targetState
             if state == .expanded {
                 hudDismissTimer?.invalidate()
             }
@@ -358,7 +390,8 @@ public final class NotchViewModel: ObservableObject {
         if expanded && SettingsWindowController.shared.isSettingsOpen {
             return
         }
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
+        let anim = expanded ? Self.expandSpring : Self.collapseSpring
+        withAnimation(anim) {
             state = expanded ? .expanded : .compact
             if expanded {
                 hudDismissTimer?.invalidate()

@@ -93,9 +93,7 @@ public struct ExpandedIslandView: View {
                     
                     // Settings Window Button (Opens independent macOS window and closes notch)
                     Button {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                            viewModel.setExpanded(false)
-                        }
+                        viewModel.setExpanded(false)
                         SettingsWindowController.shared.showWindow()
                     } label: {
                         Image(systemName: "gearshape.fill")
