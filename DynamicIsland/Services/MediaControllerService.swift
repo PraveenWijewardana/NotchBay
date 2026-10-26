@@ -812,8 +812,8 @@ public final class MediaControllerService: ObservableObject {
                     }
                     self.updateActiveLyricIndex()
                     self.tickerTickCount += 1
-                    // Actively resync ground truth position from Spotify/Music every 2s to eliminate drift
-                    if self.tickerTickCount % 2 == 0 {
+                    // Resync ground truth position from Spotify/Music every 10s to eliminate AppleScript overhead
+                    if self.tickerTickCount % 10 == 0 {
                         self.syncPlayerPositionOnly()
                     }
                 } else {
@@ -821,7 +821,7 @@ public final class MediaControllerService: ObservableObject {
                 }
             }
         }
-        timer.tolerance = 0.1
+        timer.tolerance = 0.2
         RunLoop.main.add(timer, forMode: .common)
         playbackTickerTimer = timer
     }
@@ -882,7 +882,8 @@ public final class MediaControllerService: ObservableObject {
     private func startVisualizer() {
         visualizerTimer?.invalidate()
         guard currentTrack.isPlaying else { return }
-        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
+        // Battery-efficient 0.45s interval with fluid spring interpolation in SwiftUI
+        let timer = Timer(timeInterval: 0.45, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 if self.currentTrack.isPlaying {
@@ -892,7 +893,7 @@ public final class MediaControllerService: ObservableObject {
                 }
             }
         }
-        timer.tolerance = 0.05
+        timer.tolerance = 0.1
         RunLoop.main.add(timer, forMode: .common)
         visualizerTimer = timer
     }

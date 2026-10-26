@@ -138,12 +138,19 @@ public final class DropShelfService: ObservableObject {
         let isImage = ["png", "jpg", "jpeg", "gif", "webp", "heic", "svg", "tiff", "bmp"].contains(ext)
         
         var imgData: Data? = nil
-        if isImage && size < 15_000_000 {
-            imgData = try? Data(contentsOf: url)
+        if isImage, let fullImg = NSImage(contentsOf: url) {
+            let maxDim: CGFloat = 200
+            let scale = min(maxDim / max(1, fullImg.size.width), maxDim / max(1, fullImg.size.height), 1.0)
+            let thumbSize = NSSize(width: fullImg.size.width * scale, height: fullImg.size.height * scale)
+            let thumb = NSImage(size: thumbSize)
+            thumb.lockFocus()
+            fullImg.draw(in: NSRect(origin: .zero, size: thumbSize), from: NSRect(origin: .zero, size: fullImg.size), operation: .copy, fraction: 1.0)
+            thumb.unlockFocus()
+            imgData = (thumb.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) })?.representation(using: .jpeg, properties: [.compressionFactor: 0.75])
         } else {
             let icon = NSWorkspace.shared.icon(forFile: url.path)
-            icon.size = NSSize(width: 128, height: 128)
-            imgData = icon.tiffRepresentation
+            icon.size = NSSize(width: 96, height: 96)
+            imgData = (icon.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) })?.representation(using: .png, properties: [:])
         }
         
         let item = ShelfItem(
@@ -160,11 +167,24 @@ public final class DropShelfService: ObservableObject {
     
     public func addImage(data: Data, name: String) {
         let sizeFormatted = ByteCountFormatter.string(fromByteCount: Int64(data.count), countStyle: .file)
+        var previewData = data
+        if let img = NSImage(data: data), (img.size.width > 220 || img.size.height > 220) {
+            let maxDim: CGFloat = 200
+            let scale = min(maxDim / max(1, img.size.width), maxDim / max(1, img.size.height), 1.0)
+            let thumbSize = NSSize(width: img.size.width * scale, height: img.size.height * scale)
+            let thumb = NSImage(size: thumbSize)
+            thumb.lockFocus()
+            img.draw(in: NSRect(origin: .zero, size: thumbSize), from: NSRect(origin: .zero, size: img.size), operation: .copy, fraction: 1.0)
+            thumb.unlockFocus()
+            if let compressed = (thumb.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) })?.representation(using: .jpeg, properties: [.compressionFactor: 0.75]) {
+                previewData = compressed
+            }
+        }
         let item = ShelfItem(
             name: name,
             path: nil,
             stringContent: nil,
-            imageData: data,
+            imageData: previewData,
             colorHex: nil,
             fileSizeFormatted: sizeFormatted,
             itemType: .image

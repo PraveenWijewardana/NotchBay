@@ -219,14 +219,14 @@ public final class CallService: ObservableObject {
     
     public func startAutoDetectMonitoring() {
         autoDetectTimer?.invalidate()
-        // Low-overhead 2.0s timer when idle with tolerance to save battery and CPU
-        let interval: TimeInterval = (currentCall != nil) ? 1.0 : 2.0
+        // Battery-efficient 3.0s timer when idle with generous tolerance to save battery and CPU
+        let interval: TimeInterval = (currentCall != nil) ? 1.0 : 3.0
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkRealTimeCallStatus()
             }
         }
-        timer.tolerance = 0.3
+        timer.tolerance = (currentCall != nil) ? 0.2 : 0.8
         RunLoop.main.add(timer, forMode: .common)
         autoDetectTimer = timer
     }
@@ -361,9 +361,36 @@ public final class CallService: ObservableObject {
                     windowTitle = t
                 }
                 
+                let titleLower = windowTitle.lowercased()
+                let isBrowser = (cand.appType == .meet)
+                let hasCallKeyword = titleLower.contains("meet") ||
+                                     titleLower.contains("zoom") ||
+                                     titleLower.contains("call") ||
+                                     titleLower.contains("huddle") ||
+                                     titleLower.contains("incoming") ||
+                                     titleLower.contains("ringing") ||
+                                     titleLower.contains("facetime") ||
+                                     titleLower.contains("teams")
+                
+                // Fast-path filter: Avoid heavy recursive AX scanning on regular browser tabs and non-call windows
+                if !isInCallService {
+                    if isBrowser && !hasCallKeyword {
+                        continue
+                    }
+                    if !hasCallKeyword {
+                        // Check if it's a dialog/floating window, otherwise skip
+                        var subroleRef: CFTypeRef?
+                        AXUIElementCopyAttributeValue(win, kAXSubroleAttribute as CFString, &subroleRef)
+                        let subrole = subroleRef as? String ?? ""
+                        if subrole != "AXDialog" && subrole != "AXFloatingWindow" {
+                            continue
+                        }
+                    }
+                }
+                
                 var buttons: [(role: String, title: String, element: AXUIElement)] = []
                 var extractedTexts: [String] = []
-                scanAXUIElement(win, depth: 0, maxDepth: 4, extractedTexts: &extractedTexts, buttons: &buttons)
+                scanAXUIElement(win, depth: 0, maxDepth: 3, extractedTexts: &extractedTexts, buttons: &buttons)
                 
                 let acceptBtn = buttons.first { b in
                     let lower = b.title.lowercased()
@@ -379,8 +406,6 @@ public final class CallService: ObservableObject {
                     let lower = b.title.lowercased()
                     return lower.contains("mute") || lower.contains("mic")
                 }?.element
-                
-                let titleLower = windowTitle.lowercased()
                 
                 // Detection criteria
                 var isCallWindow = false

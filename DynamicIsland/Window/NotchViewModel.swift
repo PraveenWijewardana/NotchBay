@@ -32,6 +32,7 @@ public final class NotchViewModel: ObservableObject {
     @Published public var selectedPageIndex: Int = 0 {
         didSet {
             systemService.isDetailedMonitoringActive = (state == .expanded && selectedPageIndex == 1)
+            networkService.isDetailedMonitoringActive = (state == .expanded && (selectedPageIndex == 0 || selectedPageIndex == 1))
             if selectedPageIndex == 0 || selectedPageIndex == 3 {
                 mediaService.syncPlayerStateFromActiveApp()
             }
@@ -111,12 +112,14 @@ public final class NotchViewModel: ObservableObject {
             currentDate = Date()
             startClockTimer()
             systemService.isDetailedMonitoringActive = (selectedPageIndex == 1)
+            networkService.isDetailedMonitoringActive = (selectedPageIndex == 0 || selectedPageIndex == 1)
             systemService.refreshAll()
             mediaService.syncPlayerStateFromActiveApp()
             focusService.refreshFocusState()
         } else {
             stopClockTimer()
             systemService.isDetailedMonitoringActive = false
+            networkService.isDetailedMonitoringActive = false
         }
     }
     

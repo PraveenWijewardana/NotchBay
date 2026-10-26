@@ -91,15 +91,25 @@ public final class ClipboardService: ObservableObject {
         lastChangeCount = currentCount
         
         // 1. Check for Image
-        if let image = NSImage(pasteboard: pasteboard),
-           let tiffData = image.tiffRepresentation,
-           let bitmap = NSBitmapImageRep(data: tiffData),
-           let pngData = bitmap.representation(using: .png, properties: [:]) {
+        if let image = NSImage(pasteboard: pasteboard) {
+            let maxDimension: CGFloat = 200
+            let originalWidth = max(1, image.size.width)
+            let originalHeight = max(1, image.size.height)
+            let scale = min(maxDimension / originalWidth, maxDimension / originalHeight, 1.0)
+            let thumbSize = NSSize(width: originalWidth * scale, height: originalHeight * scale)
+            
+            let thumbImg = NSImage(size: thumbSize)
+            thumbImg.lockFocus()
+            image.draw(in: NSRect(origin: .zero, size: thumbSize), from: NSRect(origin: .zero, size: image.size), operation: .copy, fraction: 1.0)
+            thumbImg.unlockFocus()
+            
+            let thumbData = (thumbImg.tiffRepresentation.flatMap { NSBitmapImageRep(data: $0) })?.representation(using: .jpeg, properties: [.compressionFactor: 0.75])
+            
             let item = ClipboardItem(
-                textContent: "Image (\(Int(image.size.width)) × \(Int(image.size.height)))",
+                textContent: "Image (\(Int(originalWidth)) × \(Int(originalHeight)))",
                 type: .image,
-                imageData: pngData,
-                preview: "Screenshot / Copied Image"
+                imageData: thumbData,
+                preview: "Copied Image (\(Int(originalWidth)) × \(Int(originalHeight)))"
             )
             addItem(item)
             return

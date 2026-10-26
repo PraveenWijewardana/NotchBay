@@ -11,11 +11,18 @@ public final class NetworkMonitorService: ObservableObject {
     private var previousSampleTime: Date = Date()
     private var hasInitialized = false
     
-    public init() {
-        start()
+    public var isDetailedMonitoringActive: Bool = false {
+        didSet {
+            guard oldValue != isDetailedMonitoringActive else { return }
+            start(interval: isDetailedMonitoringActive ? 1.0 : 3.0)
+        }
     }
     
-    public func start(interval: TimeInterval = 1.0) {
+    public init() {
+        start(interval: 3.0)
+    }
+    
+    public func start(interval: TimeInterval = 3.0) {
         timer?.invalidate()
         readInterfaceBytes { [weak self] bytesIn, bytesOut in
             guard let self = self else { return }
@@ -30,6 +37,7 @@ public final class NetworkMonitorService: ObservableObject {
                 self?.sample()
             }
         }
+        t.tolerance = isDetailedMonitoringActive ? 0.1 : 0.8
         RunLoop.main.add(t, forMode: .common)
         timer = t
     }

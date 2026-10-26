@@ -51,8 +51,8 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
             lock.unlock()
             return cached
         }
-        // Rate-limit discovery attempts to at most once every 30 seconds if failed
-        if Date().timeIntervalSince(lastProbeTime) < 30 {
+        // Rate-limit discovery attempts to at most once every 60 seconds if failed
+        if Date().timeIntervalSince(lastProbeTime) < 60 {
             lock.unlock()
             return nil
         }
@@ -315,13 +315,13 @@ public final class AgentAutoDetectorService: ObservableObject {
         RunLoop.main.add(mTimer, forMode: .common)
         monitorTimer = mTimer
         
-        // 2. Scan AI Usage every 60.0 seconds (with 5.0s tolerance)
-        let uTimer = Timer(timeInterval: 60.0, repeats: true) { [weak self] _ in
+        // 2. Scan AI Usage every 120.0 seconds (with 10.0s tolerance)
+        let uTimer = Timer(timeInterval: 120.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.scanUsageMetrics()
             }
         }
-        uTimer.tolerance = 5.0
+        uTimer.tolerance = 10.0
         RunLoop.main.add(uTimer, forMode: .common)
         usageTimer = uTimer
         
