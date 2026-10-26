@@ -311,21 +311,4 @@ public final class AgentCompanionService: ObservableObject {
             at: 0
         )
     }
-    
-    // MARK: - Simulation Triggers for User Testing
-    public func simulateWorking(agent: CodeAgentType) {
-        setWorking(agent: agent, status: .coding, message: "Refactoring and generating Swift tests...")
-    }
-    
-    public func simulatePermission(agent: CodeAgentType) {
-        requestPermission(
-            agent: agent,
-            actionOrTool: "Run Command: npm run deploy --prod",
-            detail: "Agent requests permission to deploy to production cluster"
-        )
-    }
-    
-    public func simulateCompletion(agent: CodeAgentType) {
-        completeTask(agent: agent, message: "Code compilation & automated tests passed!")
-    }
 }

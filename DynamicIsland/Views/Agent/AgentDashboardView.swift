@@ -96,39 +96,6 @@ public struct AgentDashboardView: View {
                     .buttonStyle(.plain)
                 }
             }
-            
-            // Demo & Simulation Menu
-            Menu {
-                Section("Simulate State") {
-                    Button("Simulate: Wait / Thinking") {
-                        agentService.setWorking(agent: agentService.selectedAgent, status: .thinking, message: "Analyzing project files...")
-                    }
-                    Button("Simulate: Wait / Running Tool") {
-                        agentService.setWorking(agent: agentService.selectedAgent, status: .executing, message: "Running: git diff --cached")
-                    }
-                    Button("Simulate: Request Permission") {
-                        agentService.requestPermission(
-                            agent: agentService.selectedAgent,
-                            actionOrTool: "Run: git push origin main",
-                            detail: "Requires network access outside sandbox"
-                        )
-                    }
-                    Button("Simulate: Task Finished") {
-                        agentService.completeTask(agent: agentService.selectedAgent, message: "All files updated and verified!")
-                    }
-                }
-                Divider()
-                Button("Reset to Idle") {
-                    agentService.updateSilentStatus(agent: agentService.selectedAgent, status: .idle, message: "Connected & Ready")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
-                    .frame(width: 18, height: 18)
-            }
-            .menuStyle(.borderlessButton)
-            .help("Simulate agent states")
         }
     }
     

@@ -320,28 +320,4 @@ public final class FileTransferService: ObservableObject {
         guard let url = activeTransfer?.fileURL else { return }
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
-    
-    public func simulateAirDropTransfer(filename: String = "IMG_4092.HEIC") {
-        let item = ActiveTransferItem(
-            filename: filename,
-            progress: 1.0,
-            isAirDrop: true,
-            isCompleted: true,
-            fileURL: downloadsURL.appendingPathComponent(filename),
-            currentBytes: 15_420_000,
-            totalBytes: 15_420_000,
-            speedBytesPerSec: 0
-        )
-        self.activeTransfer = item
-        NSSound(named: "Glass")?.play()
-        onTransferChanged?(item)
-        
-        dismissTimer?.invalidate()
-        dismissTimer = Timer.scheduledTimer(withTimeInterval: 3.5, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.activeTransfer = nil
-                self?.onTransferChanged?(nil)
-            }
-        }
-    }
 }
