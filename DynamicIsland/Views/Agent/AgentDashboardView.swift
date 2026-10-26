@@ -96,29 +96,8 @@ public struct AgentDashboardView: View {
         
         let hasPendingApproval = (agentService.activePermissionRequest?.agent == agent)
         
-        let fiveHourColor: Color = {
-            if isUsageMode {
-                if fiveHourDisplayPct > 80 { return Color.red }
-                if fiveHourDisplayPct > 50 { return Color.orange }
-                return agent.accentColor
-            } else {
-                if fiveHourDisplayPct > 50 { return agent.accentColor }
-                if fiveHourDisplayPct > 20 { return Color.orange }
-                return Color.red
-            }
-        }()
-        
-        let weeklyColor: Color = {
-            if isUsageMode {
-                if weeklyDisplayPct > 80 { return Color.red }
-                if weeklyDisplayPct > 50 { return Color.orange }
-                return Color(red: 0.75, green: 0.55, blue: 1.0)
-            } else {
-                if weeklyDisplayPct > 50 { return Color(red: 0.75, green: 0.55, blue: 1.0) }
-                if weeklyDisplayPct > 20 { return Color.orange }
-                return Color.red
-            }
-        }()
+        let fiveHourColor = quotaStatusColor(pct: fiveHourDisplayPct, isUsageMode: isUsageMode)
+        let weeklyColor = quotaStatusColor(pct: weeklyDisplayPct, isUsageMode: isUsageMode)
         
         return VStack(alignment: .leading, spacing: 5) {
             // Card Header: Icon + Name + Status + Quick Focus
@@ -218,7 +197,7 @@ public struct AgentDashboardView: View {
                         Spacer()
                         Text(metrics.fiveHourResetCountdown)
                             .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(.secondary)
                     }
                     
                     // Progress Bar
@@ -272,7 +251,7 @@ public struct AgentDashboardView: View {
                         Spacer()
                         Text(metrics.weeklyResetCountdown)
                             .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
-                            .foregroundColor(Color(red: 0.75, green: 0.55, blue: 1.0))
+                            .foregroundColor(.secondary)
                     }
                     
                     // Progress Bar
@@ -337,6 +316,29 @@ public struct AgentDashboardView: View {
         case .claude: return "Claude Code"
         case .cursor: return "Cursor AI"
         case .copilot: return "Copilot"
+        }
+    }
+    
+    /// Returns dynamic traffic-light colors (Red, Yellow, Green) based on quota consumption / remaining limits.
+    private func quotaStatusColor(pct: Int, isUsageMode: Bool) -> Color {
+        if isUsageMode {
+            // Usage mode: 0-50% = Green (low usage), 51-80% = Yellow (moderate usage), >80% = Red (high usage)
+            if pct > 80 {
+                return Color(red: 1.0, green: 0.27, blue: 0.23) // Apple Red
+            } else if pct > 50 {
+                return Color(red: 1.0, green: 0.80, blue: 0.0)  // Apple Yellow
+            } else {
+                return Color(red: 0.20, green: 0.85, blue: 0.45) // Apple Green
+            }
+        } else {
+            // Remaining mode: >50% = Green (healthy quota left), 20-50% = Yellow (moderate remaining), <20% = Red (critically low)
+            if pct > 50 {
+                return Color(red: 0.20, green: 0.85, blue: 0.45) // Apple Green
+            } else if pct >= 20 {
+                return Color(red: 1.0, green: 0.80, blue: 0.0)  // Apple Yellow
+            } else {
+                return Color(red: 1.0, green: 0.27, blue: 0.23) // Apple Red
+            }
         }
     }
 }
