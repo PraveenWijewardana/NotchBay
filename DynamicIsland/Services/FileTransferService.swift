@@ -95,13 +95,28 @@ public final class FileTransferService: ObservableObject {
     private var lastBytesMap: [String: Int64] = [:]
     private var lastPollTime: Date = Date()
     private var dismissTimer: Timer?
+    private var cancellables = Set<AnyCancellable>()
     
     public init() {
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first ?? URL(fileURLWithPath: NSHomeDirectory() + "/Downloads")
         self.downloadsURL = downloads
         
-        scanInitialDownloads()
-        startMonitoring()
+        // Listen to settings toggle
+        AppSettings.shared.$enableAirDropAlerts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] enabled in
+                if enabled {
+                    self?.startMonitoring()
+                } else {
+                    self?.stopMonitoring()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Only start monitoring if explicitly enabled by the user in Settings
+        if AppSettings.shared.enableAirDropAlerts {
+            startMonitoring()
+        }
     }
     
     deinit {
@@ -109,33 +124,65 @@ public final class FileTransferService: ObservableObject {
         dismissTimer?.invalidate()
     }
     
-    private func scanInitialDownloads() {
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: downloadsURL, includingPropertiesForKeys: [.fileSizeKey], options: [.skipsHiddenFiles]) else { return }
-        for file in contents {
-            let size = Int64((try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
-            knownFiles[file.lastPathComponent] = size
-        }
+    public func stopMonitoring() {
+        monitorTimer?.invalidate()
+        monitorTimer = nil
+        dismissTimer?.invalidate()
+        dismissTimer = nil
+        activeTransfer = nil
+        lastBytesMap.removeAll()
     }
     
     public func startMonitoring() {
-        monitorTimer?.invalidate()
+        stopMonitoring()
+        guard AppSettings.shared.enableAirDropAlerts else { return }
+        
+        // Try reading once; if permission is denied, stop permanently so macOS TCC does NOT loop!
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(
+                at: downloadsURL,
+                includingPropertiesForKeys: [.fileSizeKey],
+                options: [.skipsHiddenFiles]
+            )
+            for file in contents {
+                let size = Int64((try? file.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0)
+                knownFiles[file.lastPathComponent] = size
+            }
+        } catch {
+            // Permission not granted or denied - stop immediately and do not loop!
+            stopMonitoring()
+            return
+        }
+        
         lastPollTime = Date()
-        // Poll every 0.8s to detect browser downloads or incoming AirDrops
-        let timer = Timer(timeInterval: 0.8, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkForTransferActivity()
             }
         }
+        timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
         monitorTimer = timer
     }
     
     private func checkForTransferActivity() {
-        guard let contents = try? FileManager.default.contentsOfDirectory(
-            at: downloadsURL,
-            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
+        guard AppSettings.shared.enableAirDropAlerts else {
+            stopMonitoring()
+            return
+        }
+        
+        let contents: [URL]
+        do {
+            contents = try FileManager.default.contentsOfDirectory(
+                at: downloadsURL,
+                includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey],
+                options: [.skipsHiddenFiles]
+            )
+        } catch {
+            // Access denied or revoked - immediately stop timer to prevent system prompt loops!
+            stopMonitoring()
+            return
+        }
         
         let now = Date()
         let timeDelta = max(0.1, now.timeIntervalSince(lastPollTime))

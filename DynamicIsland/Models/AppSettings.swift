@@ -352,7 +352,7 @@ public final class AppSettings: ObservableObject {
         self.enableVolumeHUD = defaults.object(forKey: "nb_enableVolumeHUD") as? Bool ?? true
         self.enableBrightnessHUD = defaults.object(forKey: "nb_enableBrightnessHUD") as? Bool ?? true
         self.enableCapsLockHUD = defaults.object(forKey: "nb_enableCapsLockHUD") as? Bool ?? true
-        self.enableAirDropAlerts = defaults.object(forKey: "nb_enableAirDropAlerts") as? Bool ?? true
+        self.enableAirDropAlerts = defaults.object(forKey: "nb_enableAirDropAlerts") as? Bool ?? false
         self.enableCallDetection = defaults.object(forKey: "nb_enableCallDetection") as? Bool ?? true
         
         self.agentPort = defaults.object(forKey: "nb_agentPort") as? Int ?? 19842
@@ -423,7 +423,7 @@ public final class AppSettings: ObservableObject {
         enableVolumeHUD = true
         enableBrightnessHUD = true
         enableCapsLockHUD = true
-        enableAirDropAlerts = true
+        enableAirDropAlerts = false
         enableCallDetection = true
         
         agentPort = 19842
