@@ -69,6 +69,8 @@ public final class NotchWindowController: NSObject, ObservableObject {
         // Detects clicks outside the island when expanded and tucks it UP into the notch
         globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self = self, self.viewModel.state == .expanded else { return }
+            // Do not minimize if notch is pinned / locked open
+            guard !self.viewModel.isPinned else { return }
             guard AppSettings.shared.autoCollapseOnClickOutside else { return }
             
             // Respect keepOpenOnDropShelf setting

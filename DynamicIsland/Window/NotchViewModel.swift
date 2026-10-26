@@ -42,6 +42,12 @@ public final class NotchViewModel: ObservableObject {
     }
     @Published public var systemDetailMode: SystemDetailBlock? = nil
     @Published public var isHovering: Bool = false
+    @Published public var isPinned: Bool = AppSettings.shared.isIslandPinned {
+        didSet {
+            AppSettings.shared.isIslandPinned = isPinned
+        }
+    }
+    @Published public var isGrabberHovered: Bool = false
     
     // Services
     @Published public var systemService = SystemMonitorService()

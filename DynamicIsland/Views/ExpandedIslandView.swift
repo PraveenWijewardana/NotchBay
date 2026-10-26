@@ -141,10 +141,13 @@ public struct ExpandedIslandView: View {
             }
             .frame(maxHeight: .infinity)
             .transition(.opacity)
+            
+            // MARK: - Bottom Grabber / Lock Open Indicator Line (Shows on every page)
+            bottomLockGrabberLine
         }
         .padding(.horizontal, 14)
         .padding(.top, 4)
-        .padding(.bottom, 10)
+        .padding(.bottom, 6)
     }
     
     // MARK: - Top Tab Capsule Button
@@ -184,5 +187,47 @@ public struct ExpandedIslandView: View {
         }
         .buttonStyle(.plain)
         .help(title)
+    }
+    
+    // MARK: - Bottom Lock Open Grabber Indicator (Every Page)
+    private var bottomLockGrabberLine: some View {
+        Button {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+                viewModel.isPinned.toggle()
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Capsule()
+                    .fill(
+                        viewModel.isPinned
+                            ? LinearGradient(
+                                colors: [Color(red: 0.20, green: 0.85, blue: 0.45), Color(red: 0.15, green: 0.75, blue: 0.95)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            : LinearGradient(
+                                colors: [Color.white.opacity(viewModel.isGrabberHovered ? 0.45 : 0.22), Color.white.opacity(viewModel.isGrabberHovered ? 0.45 : 0.22)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                    )
+                    .frame(width: viewModel.isPinned ? 48 : (viewModel.isGrabberHovered ? 42 : 36), height: 3.5)
+                    .shadow(
+                        color: viewModel.isPinned ? Color(red: 0.20, green: 0.85, blue: 0.45).opacity(0.85) : (viewModel.isGrabberHovered ? Color.white.opacity(0.2) : Color.clear),
+                        radius: viewModel.isPinned ? 5 : 2,
+                        x: 0,
+                        y: 0
+                    )
+            }
+            .frame(width: 70, height: 14)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.18)) {
+                viewModel.isGrabberHovered = hovering
+            }
+        }
+        .help(viewModel.isPinned ? "Notch is Locked Open (Won't minimize when clicking other apps — Click to unlock)" : "Lock Notch Open (Keep expanded when clicking other apps)")
     }
 }

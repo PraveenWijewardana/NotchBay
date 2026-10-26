@@ -135,6 +135,9 @@ public final class AppSettings: ObservableObject {
     @Published public var keepOpenOnDropShelf: Bool {
         didSet { defaults.set(keepOpenOnDropShelf, forKey: "nb_keepOpenOnDropShelf") }
     }
+    @Published public var isIslandPinned: Bool {
+        didSet { defaults.set(isIslandPinned, forKey: "nb_isIslandPinned") }
+    }
     
     // MARK: - Appearance & Theme
     @Published public var accentColor: AccentColorChoice {
@@ -303,6 +306,7 @@ public final class AppSettings: ObservableObject {
         self.hoverDelay = defaults.object(forKey: "nb_hoverDelay") as? Double ?? 0.15
         self.autoCollapseOnClickOutside = defaults.object(forKey: "nb_autoCollapseOnClickOutside") as? Bool ?? true
         self.keepOpenOnDropShelf = defaults.object(forKey: "nb_keepOpenOnDropShelf") as? Bool ?? true
+        self.isIslandPinned = defaults.object(forKey: "nb_isIslandPinned") as? Bool ?? false
         
         let savedAccent = defaults.string(forKey: "nb_accentColor") ?? AccentColorChoice.cyan.rawValue
         self.accentColor = AccentColorChoice(rawValue: savedAccent) ?? .cyan
@@ -385,6 +389,7 @@ public final class AppSettings: ObservableObject {
         hoverDelay = 0.15
         autoCollapseOnClickOutside = true
         keepOpenOnDropShelf = true
+        isIslandPinned = false
         
         accentColor = .cyan
         glassMaterial = .trueBlack
