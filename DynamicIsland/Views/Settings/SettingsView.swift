@@ -80,7 +80,7 @@ public struct SettingsView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 16)
+                .padding(.top, 24)
                 .padding(.bottom, 12)
                 
                 Divider()
@@ -138,7 +138,23 @@ public struct SettingsView: View {
                     
                     Spacer(minLength: 30)
                 }
-                .padding(26)
+                .padding(.horizontal, 26)
+                .padding(.bottom, 26)
+                .padding(.top, 18)
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                ZStack {
+                    Rectangle()
+                        .fill(.ultraThinMaterial)
+                    
+                    Color(red: 0.05, green: 0.055, blue: 0.075)
+                        .opacity(0.85)
+                }
+                .frame(height: 52)
+                .overlay(
+                    Divider().background(Color.white.opacity(0.08)),
+                    alignment: .bottom
+                )
             }
             .background(Color(red: 0.05, green: 0.055, blue: 0.075))
         }
