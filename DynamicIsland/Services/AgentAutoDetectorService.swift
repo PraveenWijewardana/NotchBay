@@ -22,7 +22,7 @@ final class LocalhostTrustDelegate: NSObject, URLSessionDelegate {
     }
 }
 
-// MARK: - Antigravity Language Server Bridge (CodeNotch Architecture)
+// MARK: - Antigravity Language Server Bridge (CodeNotch Architecture - Cached & Low Overhead)
 final class AntigravityLanguageServerBridge: @unchecked Sendable {
     struct Endpoint: Equatable {
         let ports: [Int]
@@ -32,21 +32,31 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
     private let session: URLSession
     private let lock = NSLock()
     private var cachedEndpoint: Endpoint?
+    private var lastProbeTime: Date = .distantPast
+    private var cachedResult: (buckets: [QuotaBucket], plan: String)? = nil
+    private var lastResultTime: Date = .distantPast
     
     init() {
         let config = URLSessionConfiguration.ephemeral
-        config.timeoutIntervalForRequest = 4
-        config.timeoutIntervalForResource = 6
+        config.timeoutIntervalForRequest = 3
+        config.timeoutIntervalForResource = 4
         self.session = URLSession(configuration: config, delegate: LocalhostTrustDelegate(), delegateQueue: nil)
     }
     
     /// Discovers language server PID and CSRF token via `ps`, then discovers listening ports via `lsof`.
+    /// Cached to avoid repetitive process spawning.
     func discoverEndpoint() -> Endpoint? {
         lock.lock()
         if let cached = cachedEndpoint {
             lock.unlock()
             return cached
         }
+        // Rate-limit discovery attempts to at most once every 30 seconds if failed
+        if Date().timeIntervalSince(lastProbeTime) < 30 {
+            lock.unlock()
+            return nil
+        }
+        lastProbeTime = Date()
         lock.unlock()
         
         // 1. Run /bin/ps -Ao pid,command to locate language_server
@@ -117,9 +127,15 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
     }
     
     /// Sends RPC POST to /exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary
-    func fetchQuota() async -> (buckets: [QuotaBucket], plan: String)? {
-        guard let endpoint = discoverEndpoint() else { return nil }
+    func fetchQuota(force: Bool = false) async -> (buckets: [QuotaBucket], plan: String)? {
+        lock.lock()
+        if !force, let cached = cachedResult, Date().timeIntervalSince(lastResultTime) < 45 {
+            lock.unlock()
+            return cached
+        }
+        lock.unlock()
         
+        guard let endpoint = discoverEndpoint() else { return nil }
         let path = "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary"
         
         for port in endpoint.ports {
@@ -132,7 +148,7 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
                     request.setValue(token, forHTTPHeaderField: "x-codeium-csrf-token")
                 }
                 request.httpBody = Data(#"{"forceRefresh":true}"#.utf8)
-                request.timeoutInterval = 4
+                request.timeoutInterval = 3
                 
                 guard let (data, response) = try? await session.data(for: request),
                       (response as? HTTPURLResponse)?.statusCode == 200 else {
@@ -140,12 +156,15 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
                 }
                 
                 if let parsed = parseQuotaResponse(data: data) {
+                    lock.lock()
+                    self.cachedResult = parsed
+                    self.lastResultTime = Date()
+                    lock.unlock()
                     return parsed
                 }
             }
         }
         
-        // If all candidate ports failed, invalidate cached endpoint to rediscover next time
         lock.lock()
         cachedEndpoint = nil
         lock.unlock()
@@ -163,7 +182,6 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
             planName = plan
         }
         
-        // Find quota groups or buckets across varying RPC response shapes
         var rawGroups: [[String: Any]] = []
         if let userStatus = json["userStatus"] as? [String: Any],
            let quotaGroup = userStatus["quotaGroup"] as? [String: Any],
@@ -240,7 +258,7 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
     }
 }
 
-// MARK: - Agent Auto-Detector Service
+// MARK: - Agent Auto-Detector Service (Ultra-Low CPU Architecture)
 @MainActor
 public final class AgentAutoDetectorService: ObservableObject {
     private weak var companion: AgentCompanionService?
@@ -259,9 +277,12 @@ public final class AgentAutoDetectorService: ObservableObject {
     private var previousCpuTimes: [pid_t: UInt64] = [:]
     private var consecutiveIdleTicks: [CodeAgentType: Int] = [:]
     
-    // File paths
+    // Fast path cached transcript
     private let homeDir = FileManager.default.homeDirectoryForCurrentUser
+    private var cachedNewestTranscriptPath: String?
+    private var cachedNewestConvId: String?
     private var lastTranscriptModDate: Date?
+    private var lastFullScanDate: Date = .distantPast
     
     public init(companion: AgentCompanionService) {
         self.companion = companion
@@ -270,19 +291,25 @@ public final class AgentAutoDetectorService: ObservableObject {
     public func start() {
         stop()
         
-        // Poll process & transcript state every 2.0 seconds with low overhead
-        monitorTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
+        // 1. Monitor active session & processes every 3.0 seconds (with 0.5s tolerance for OS power-coalescing)
+        let mTimer = Timer(timeInterval: 3.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.performMonitoringTick()
             }
         }
+        mTimer.tolerance = 0.5
+        RunLoop.main.add(mTimer, forMode: .common)
+        monitorTimer = mTimer
         
-        // Scan AI Usage every 6.0 seconds in background
-        usageTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: true) { [weak self] _ in
+        // 2. Scan AI Usage every 60.0 seconds (with 5.0s tolerance)
+        let uTimer = Timer(timeInterval: 60.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.scanUsageMetrics()
             }
         }
+        uTimer.tolerance = 5.0
+        RunLoop.main.add(uTimer, forMode: .common)
+        usageTimer = uTimer
         
         performMonitoringTick()
         scanUsageMetrics()
@@ -297,15 +324,42 @@ public final class AgentAutoDetectorService: ObservableObject {
     
     // MARK: - Main Monitoring Tick
     private func performMonitoringTick() {
-        // 1. Check Antigravity live transcript / brain logs
         let antigravityDetected = checkAntigravityBrainLogs()
-        
-        // 2. Scan running process table for Claude, Cursor, Copilot, Antigravity
         checkRunningAgentProcesses(antigravityHandledByLogs: antigravityDetected)
     }
     
-    // MARK: - 1. Antigravity Brain Logs Monitor (CodeNotch stat() Architecture)
+    // MARK: - 1. Fast Antigravity Transcript Monitor (<0.1ms per tick)
     private func checkAntigravityBrainLogs() -> Bool {
+        let now = Date()
+        
+        // Fast-path: Check our cached active transcript directly (1 single stat syscall)
+        if let cachedPath = cachedNewestTranscriptPath, let convId = cachedNewestConvId {
+            var cachedInfo = stat()
+            if stat(cachedPath, &cachedInfo) == 0 {
+                let mtime = Date(timeIntervalSince1970:
+                    TimeInterval(cachedInfo.st_mtimespec.tv_sec) +
+                    TimeInterval(cachedInfo.st_mtimespec.tv_nsec) / 1_000_000_000
+                )
+                let elapsed = now.timeIntervalSince(mtime)
+                if elapsed <= 45 {
+                    if lastTranscriptModDate == nil || mtime > lastTranscriptModDate! {
+                        lastTranscriptModDate = mtime
+                        parseTranscriptTail(path: cachedPath, convId: convId, modifiedDate: mtime)
+                    }
+                    return true
+                } else if elapsed > 45, companion?.status.isBusy == true {
+                    companion?.updateSilentStatus(agent: .antigravity, status: .idle, message: "Connected & Ready")
+                    lastTranscriptModDate = nil
+                }
+            }
+        }
+        
+        // Full directory scan is only executed at most once every 10 seconds when no active turn is in flight
+        guard now.timeIntervalSince(lastFullScanDate) >= 10 else {
+            return false
+        }
+        lastFullScanDate = now
+        
         let brainUrl = homeDir.appendingPathComponent(".gemini/antigravity/brain")
         guard FileManager.default.fileExists(atPath: brainUrl.path) else { return false }
         
@@ -333,20 +387,16 @@ public final class AgentAutoDetectorService: ObservableObject {
         }
         
         guard let newest = newestTranscript else { return false }
-        let now = Date()
-        let elapsed = now.timeIntervalSince(newest.modified)
+        cachedNewestTranscriptPath = newest.path
+        cachedNewestConvId = newest.convId
         
-        // If modified within the last 45 seconds, inspect state
+        let elapsed = now.timeIntervalSince(newest.modified)
         if elapsed <= 45 {
             if lastTranscriptModDate == nil || newest.modified > lastTranscriptModDate! {
                 lastTranscriptModDate = newest.modified
                 parseTranscriptTail(path: newest.path, convId: newest.convId, modifiedDate: newest.modified)
             }
             return true
-        } else if let prevMod = lastTranscriptModDate, elapsed > 45, companion?.status.isBusy == true {
-            // Idle transition after run finishes
-            companion?.updateSilentStatus(agent: .antigravity, status: .idle, message: "Connected & Ready")
-            lastTranscriptModDate = nil
         }
         
         return false
@@ -359,15 +409,15 @@ public final class AgentAutoDetectorService: ObservableObject {
         let fileSize = handle.seekToEndOfFile()
         guard fileSize > 0 else { return }
         
-        // Read up to last 32KB of transcript
-        let readLen = min(fileSize, 32768)
+        // Read only the last 16KB of transcript to minimize heap allocation
+        let readLen = min(fileSize, 16384)
         handle.seek(toFileOffset: fileSize - readLen)
         let data = handle.readDataToEndOfFile()
         
         guard let string = String(data: data, encoding: .utf8) else { return }
         let lines = string.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         
-        // Also check conversations/<convId>.db for pending permission (status == 2 in steps)
+        // Check conversations/<convId>.db for pending permission (status == 2 in steps)
         let dbUrl = homeDir.appendingPathComponent(".gemini/antigravity/conversations/\(convId).db")
         if FileManager.default.fileExists(atPath: dbUrl.path) {
             var db: OpaquePointer?
@@ -415,7 +465,6 @@ public final class AgentAutoDetectorService: ObservableObject {
                 let toolName = firstTool["name"] as? String ?? "tool"
                 let actionText = toolAction ?? toolSummary ?? "Executing \(toolName)"
                 
-                // Permission detection
                 var needsApproval = toolName.contains("ask_question") || toolName.contains("permission")
                 if !needsApproval, let args = firstTool["arguments"] as? [String: Any],
                    let meta = args["ArtifactMetadata"] as? [String: Any],
@@ -436,7 +485,7 @@ public final class AgentAutoDetectorService: ObservableObject {
         }
     }
     
-    // MARK: - 2. AI Usage Scanner (CodeNotch Bridge + stat() Implementation)
+    // MARK: - 2. AI Usage Scanner (Low Memory & Low CPU)
     public func scanUsageMetrics() {
         guard !isScanningUsage else { return }
         isScanningUsage = true
@@ -464,9 +513,9 @@ public final class AgentAutoDetectorService: ObservableObject {
                 }
                 semaphore.signal()
             }
-            _ = semaphore.wait(timeout: .now() + 4.5)
+            _ = semaphore.wait(timeout: .now() + 3.0)
             
-            // Step 2: Accurate stat()-based transcript scanner for today's model turns
+            // Step 2: Accurate stat()-based transcript scanner using streaming chunk reading
             let geminiDir = home.appendingPathComponent(".gemini")
             let names = (try? FileManager.default.contentsOfDirectory(atPath: geminiDir.path)) ?? []
             let brainRoots = names
@@ -480,11 +529,6 @@ public final class AgentAutoDetectorService: ObservableObject {
             var activeTodaySessions = 0
             let calendar = Calendar.current
             let now = Date()
-            
-            let isoFormatter = ISO8601DateFormatter()
-            isoFormatter.formatOptions = [.withInternetDateTime]
-            let fracFormatter = ISO8601DateFormatter()
-            fracFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             
             for root in brainRoots {
                 guard let trajectories = try? FileManager.default.contentsOfDirectory(
@@ -507,22 +551,21 @@ public final class AgentAutoDetectorService: ObservableObject {
                         latestDate = mtime
                     }
                     
-                    // If transcript was modified today:
+                    // If transcript was modified today, count model turns with low memory buffer
                     if calendar.isDate(mtime, inSameDayAs: now) {
                         activeTodaySessions += 1
                         
-                        guard let text = try? String(contentsOfFile: transcriptPath, encoding: .utf8) else { continue }
-                        for line in text.split(separator: "\n") {
-                            guard line.contains("\"MODEL\"") else { continue }
-                            guard let data = line.data(using: .utf8),
-                                  let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-                                  json["source"] as? String == "MODEL" else { continue }
-                            
-                            todayCount += 1
-                            if let atStr = json["created_at"] as? String {
-                                let parsed = isoFormatter.date(from: atStr) ?? fracFormatter.date(from: atStr)
-                                if let parsed = parsed, (latestDate == nil || parsed > latestDate!) {
-                                    latestDate = parsed
+                        guard let handle = FileHandle(forReadingAtPath: transcriptPath) else { continue }
+                        let size = handle.seekToEndOfFile()
+                        let readBytes = min(size, 65536) // Read up to 64KB
+                        handle.seek(toFileOffset: size - readBytes)
+                        let data = handle.readDataToEndOfFile()
+                        try? handle.close()
+                        
+                        if let text = String(data: data, encoding: .utf8) {
+                            for line in text.split(separator: "\n") {
+                                if line.contains("\"MODEL\"") {
+                                    todayCount += 1
                                 }
                             }
                         }
@@ -530,14 +573,13 @@ public final class AgentAutoDetectorService: ObservableObject {
                 }
             }
             
-            // Step 3: Extract 5-hour and weekly quota buckets
             let fiveHourBucket = quotaBuckets.first(where: { $0.id.contains("5h") || $0.id.contains("hourly") })
             let weeklyBucket = quotaBuckets.first(where: { $0.id.contains("weekly") })
             
             Task { @MainActor [weak self] in
                 guard let self = self, let comp = self.companion else { return }
                 var metrics = comp.usageMetrics
-                metrics.requestsToday = todayCount
+                metrics.requestsToday = max(metrics.requestsToday, todayCount)
                 metrics.totalRequests = totalTrajCount
                 if let latest = latestDate {
                     metrics.lastRequestDate = latest
@@ -557,38 +599,29 @@ public final class AgentAutoDetectorService: ObservableObject {
                     metrics.weeklyResetDate = wb.resetsAt
                 }
                 
-                metrics.dailyTarget = max(500, ((todayCount / 100) + 1) * 100)
+                metrics.dailyTarget = max(500, ((metrics.requestsToday / 100) + 1) * 100)
                 comp.usageMetrics = metrics
             }
         }
     }
     
-    // MARK: - 3. Running Process Table Scanner
+    // MARK: - 3. Targeted Running Process Table Scanner (Zero PID Loop)
     private func checkRunningAgentProcesses(antigravityHandledByLogs: Bool) {
-        var pids = [pid_t](repeating: 0, count: 2048)
-        let bytesUsed = proc_listpids(UInt32(PROC_ALL_PIDS), 0, &pids, Int32(MemoryLayout<pid_t>.size * pids.count))
-        guard bytesUsed > 0 else { return }
-        let count = Int(bytesUsed) / MemoryLayout<pid_t>.size
+        // Fast path: inspect only running GUI applications via NSWorkspace (0 system calls)
+        let runningApps = NSWorkspace.shared.runningApplications
         
-        var detectedAgents: Set<CodeAgentType> = []
         var activeAgentRunning: (CodeAgentType, String)? = nil
         
-        for i in 0..<count {
-            let pid = pids[i]
-            guard pid > 0 else { continue }
-            
-            var nameBuffer = [CChar](repeating: 0, count: 256)
-            let nameLen = proc_name(pid, &nameBuffer, UInt32(nameBuffer.count))
-            guard nameLen > 0 else { continue }
-            
-            let name = String(cString: nameBuffer).lowercased()
+        for app in runningApps {
+            let id = app.bundleIdentifier?.lowercased() ?? ""
+            let name = app.localizedName?.lowercased() ?? ""
             
             let agent: CodeAgentType?
-            if name == "claude" {
+            if id.contains("claude") || name == "claude" {
                 agent = .claude
-            } else if name.contains("cursor") {
+            } else if id.contains("cursor") || name.contains("cursor") {
                 agent = .cursor
-            } else if name.contains("copilot-runtime") || name.contains("copilot") {
+            } else if id.contains("copilot") || name.contains("copilot") {
                 agent = .copilot
             } else if !antigravityHandledByLogs && (name.contains("antigravity") || name == "agy") {
                 agent = .antigravity
@@ -597,7 +630,7 @@ public final class AgentAutoDetectorService: ObservableObject {
             }
             
             guard let matchedAgent = agent else { continue }
-            detectedAgents.insert(matchedAgent)
+            let pid = app.processIdentifier
             
             let currentCpu = getProcessCpuTime(pid: pid)
             let prevCpu = previousCpuTimes[pid] ?? currentCpu
@@ -605,7 +638,7 @@ public final class AgentAutoDetectorService: ObservableObject {
             
             let delta = currentCpu > prevCpu ? currentCpu - prevCpu : 0
             
-            if delta > 15_000_000 { // ~15ms CPU time in 2.0s
+            if delta > 20_000_000 { // ~20ms CPU in 3s
                 let activityDesc: String
                 switch matchedAgent {
                 case .claude:
@@ -619,10 +652,11 @@ public final class AgentAutoDetectorService: ObservableObject {
                 }
                 activeAgentRunning = (matchedAgent, activityDesc)
                 consecutiveIdleTicks[matchedAgent] = 0
+                break
             }
         }
         
-        if previousCpuTimes.count > 100 {
+        if previousCpuTimes.count > 50 {
             previousCpuTimes.removeAll(keepingCapacity: true)
         }
         

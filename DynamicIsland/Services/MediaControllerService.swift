@@ -504,6 +504,7 @@ public final class MediaControllerService: ObservableObject {
                 }
             }
         }
+        timer.tolerance = 0.2
         RunLoop.main.add(timer, forMode: .common)
         playbackTickerTimer = timer
     }
@@ -516,7 +517,7 @@ public final class MediaControllerService: ObservableObject {
     private func startVisualizer() {
         visualizerTimer?.invalidate()
         guard currentTrack.isPlaying else { return }
-        let timer = Timer(timeInterval: 0.15, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 if self.currentTrack.isPlaying {
@@ -526,6 +527,7 @@ public final class MediaControllerService: ObservableObject {
                 }
             }
         }
+        timer.tolerance = 0.05
         RunLoop.main.add(timer, forMode: .common)
         visualizerTimer = timer
     }

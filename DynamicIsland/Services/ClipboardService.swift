@@ -74,11 +74,12 @@ public final class ClipboardService: ObservableObject {
     
     public func startMonitoring() {
         pollTimer?.invalidate()
-        let timer = Timer(timeInterval: 0.75, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 2.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkPasteboard()
             }
         }
+        timer.tolerance = 0.5
         RunLoop.main.add(timer, forMode: .common)
         pollTimer = timer
     }

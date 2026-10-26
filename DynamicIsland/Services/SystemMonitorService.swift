@@ -27,15 +27,21 @@ public final class SystemMonitorService: ObservableObject {
     }
     
     private var tickCount: Int = 0
-    public var isDetailedMonitoringActive: Bool = false
+    public var isDetailedMonitoringActive: Bool = false {
+        didSet {
+            guard oldValue != isDetailedMonitoringActive else { return }
+            startMonitoring(interval: isDetailedMonitoringActive ? 1.0 : 2.0)
+        }
+    }
     
-    public func startMonitoring(interval: TimeInterval = 1.0) {
+    public func startMonitoring(interval: TimeInterval = 2.0) {
         timer?.invalidate()
         let t = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.performMonitoringTick()
             }
         }
+        t.tolerance = isDetailedMonitoringActive ? 0.1 : 0.4
         RunLoop.main.add(t, forMode: .common)
         timer = t
     }

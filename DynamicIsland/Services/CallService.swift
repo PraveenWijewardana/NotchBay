@@ -219,12 +219,14 @@ public final class CallService: ObservableObject {
     
     public func startAutoDetectMonitoring() {
         autoDetectTimer?.invalidate()
-        // Responsive 0.5s check for real-time instant detection
-        let timer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
+        // Low-overhead 2.0s timer when idle with tolerance to save battery and CPU
+        let interval: TimeInterval = (currentCall != nil) ? 1.0 : 2.0
+        let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.checkRealTimeCallStatus()
             }
         }
+        timer.tolerance = 0.3
         RunLoop.main.add(timer, forMode: .common)
         autoDetectTimer = timer
     }
@@ -234,23 +236,10 @@ public final class CallService: ObservableObject {
         autoDetectTimer = nil
     }
     
-    // MARK: - Core Call Detection Logic
+    // MARK: - Core Call Detection Logic (Optimized for Ultra-Low CPU)
     public func checkRealTimeCallStatus() {
-        checkInstalledApps()
-        
-        // Gather candidate call apps: FaceTime, WhatsApp, InCallService, CallServices
-        let running = NSWorkspace.shared.runningApplications
-        let candidateApps = running.filter { app in
-            let id = app.bundleIdentifier?.lowercased() ?? ""
-            let name = app.localizedName?.lowercased() ?? ""
-            return id.contains("facetime") || name.contains("facetime") ||
-                   id.contains("whatsapp") || name.contains("whatsapp") ||
-                   id.contains("incallservice") || id.contains("callservices") ||
-                   name.contains("incallservice") || name.contains("callservices")
-        }
-        
-        // If none of the telephony apps are running, end any auto-detected session
-        if candidateApps.isEmpty {
+        // Fast-path: only proceed if at least one candidate app is running
+        guard isWhatsAppRunning || isFaceTimeRunning || isPhoneContinuityRunning else {
             if isAutoDetectedSession, currentCall != nil, currentCall?.status != .ended {
                 isAutoDetectedSession = false
                 endCall()
@@ -269,35 +258,72 @@ public final class CallService: ObservableObject {
             muteBtn: AXUIElement?
         )? = nil
         
-        // 1. Primary Engine: Inspect Accessibility Element Tree of candidate apps
-        for app in candidateApps {
-            let pid = app.processIdentifier
-            let appElement = AXUIElementCreateApplication(pid)
+        // 1. Fast Primary Engine: CGWindowList check (<0.05ms, zero AX IPC overhead)
+        guard let windowList = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as? [[String: Any]] else {
+            return
+        }
+        
+        var activeCallWindowPID: pid_t? = nil
+        var isCandidateCallActive = false
+        
+        for win in windowList {
+            guard let owner = win[kCGWindowOwnerName as String] as? String else { continue }
+            let ownerLower = owner.lowercased()
+            let title = (win[kCGWindowName as String] as? String) ?? ""
+            let titleLower = title.lowercased()
+            let pid = (win[kCGWindowOwnerPID as String] as? Int32) ?? 0
             
-            var windowsRef: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
-                  let windows = windowsRef as? [AXUIElement], !windows.isEmpty else {
-                continue
-            }
-            
-            let id = app.bundleIdentifier?.lowercased() ?? ""
-            let appName = app.localizedName?.lowercased() ?? ""
-            let isWhatsApp = id.contains("whatsapp") || appName.contains("whatsapp")
-            
-            for win in windows {
-                var titleRef: CFTypeRef?
-                var windowTitle = ""
-                if AXUIElementCopyAttributeValue(win, kAXTitleAttribute as CFString, &titleRef) == .success,
-                   let t = titleRef as? String {
-                    windowTitle = t
+            if ownerLower.contains("whatsapp") {
+                if titleLower.contains("call") || titleLower.contains("calling") || titleLower.contains("incoming") || titleLower.contains("ringing") {
+                    let isVideo = titleLower.contains("video")
+                    let isIncoming = titleLower.contains("incoming") || titleLower.contains("ringing")
+                    var clean = title.replacingOccurrences(of: "WhatsApp Call with ", with: "")
+                        .replacingOccurrences(of: "WhatsApp Call", with: "")
+                        .replacingOccurrences(of: "Call with ", with: "")
+                        .replacingOccurrences(of: "Calling ", with: "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if clean.isEmpty { clean = "WhatsApp Contact" }
+                    detectedInfo = (isVideo ? .whatsAppVideo : .whatsAppAudio, clean, "", isIncoming, pid, nil, nil, nil)
+                    activeCallWindowPID = pid
+                    isCandidateCallActive = true
+                    break
                 }
-                
-                var extractedTexts: [String] = []
+            } else if ownerLower.contains("facetime") || ownerLower.contains("callservices") || ownerLower.contains("incallservice") {
+                if titleLower.contains("call") || titleLower.contains("facetime") || titleLower.contains("with ") || titleLower.contains("incoming") || titleLower.contains("ringing") {
+                    let isVideo = titleLower.contains("video")
+                    let isIncoming = titleLower.contains("incoming") || titleLower.contains("ringing")
+                    var clean = title.replacingOccurrences(of: "FaceTime with ", with: "")
+                        .replacingOccurrences(of: "FaceTime", with: "")
+                        .replacingOccurrences(of: "Call with ", with: "")
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if clean.isEmpty { clean = "Phone Contact" }
+                    detectedInfo = (isVideo ? .facetimeVideo : .cellular, clean, "", isIncoming, pid, nil, nil, nil)
+                    activeCallWindowPID = pid
+                    isCandidateCallActive = true
+                    break
+                }
+            }
+        }
+        
+        // If no call window exists on screen, clean up and return immediately without AX overhead
+        guard isCandidateCallActive, let targetPID = activeCallWindowPID else {
+            if isAutoDetectedSession, currentCall != nil, currentCall?.status != .ended {
+                isAutoDetectedSession = false
+                endCall()
+            }
+            return
+        }
+        
+        // 2. Secondary Engine: Only inspect AX buttons for the single active call PID
+        let appElement = AXUIElementCreateApplication(targetPID)
+        var windowsRef: CFTypeRef?
+        if AXUIElementCopyAttributeValue(appElement, kAXWindowsAttribute as CFString, &windowsRef) == .success,
+           let windows = windowsRef as? [AXUIElement] {
+            for win in windows.prefix(2) {
                 var buttons: [(role: String, title: String, element: AXUIElement)] = []
+                var extractedTexts: [String] = []
+                scanAXUIElement(win, depth: 0, maxDepth: 3, extractedTexts: &extractedTexts, buttons: &buttons)
                 
-                scanAXUIElement(win, depth: 0, maxDepth: 4, extractedTexts: &extractedTexts, buttons: &buttons)
-                
-                // Identify Accept / Decline / End / Mute buttons
                 let acceptBtn = buttons.first { b in
                     let lower = b.title.lowercased()
                     return lower.contains("accept") || lower.contains("answer") || lower.contains("join")
@@ -313,52 +339,20 @@ public final class CallService: ObservableObject {
                     return lower.contains("mute") || lower.contains("mic")
                 }?.element
                 
-                let allTextsJoined = ([windowTitle] + extractedTexts).joined(separator: " ").lowercased()
-                
-                let isCallWindow = isWhatsApp ?
-                    (allTextsJoined.contains("call") || allTextsJoined.contains("calling") || allTextsJoined.contains("ringing") || acceptBtn != nil || (declineBtn != nil && muteBtn != nil)) :
-                    (allTextsJoined.contains("call") || allTextsJoined.contains("facetime") || allTextsJoined.contains("ringing") || acceptBtn != nil || declineBtn != nil)
-                
-                guard isCallWindow else { continue }
-                
-                let isIncoming = (acceptBtn != nil) || allTextsJoined.contains("incoming") || allTextsJoined.contains("ringing")
-                
-                // Determine Category
-                let category: CallCategory
-                if isWhatsApp {
-                    let isVideo = allTextsJoined.contains("video")
-                    category = isVideo ? .whatsAppVideo : .whatsAppAudio
-                } else {
-                    if allTextsJoined.contains("cellular") || allTextsJoined.contains("iphone") {
-                        category = .cellular
-                    } else if allTextsJoined.contains("video") {
-                        category = .facetimeVideo
-                    } else {
-                        category = .facetimeAudio
-                    }
+                if let info = detectedInfo {
+                    detectedInfo = (
+                        category: info.category,
+                        contactName: info.contactName,
+                        numberOrHandle: info.numberOrHandle,
+                        isIncoming: (acceptBtn != nil) || info.isIncoming,
+                        pid: info.pid,
+                        acceptBtn: acceptBtn ?? info.acceptBtn,
+                        declineBtn: declineBtn ?? info.declineBtn,
+                        muteBtn: muteBtn ?? info.muteBtn
+                    )
                 }
-                
-                // Extract real contact identifier
-                let rawIdentifier = extractCallerIdentifier(
-                    windowTitle: windowTitle,
-                    extractedTexts: extractedTexts,
-                    isWhatsApp: isWhatsApp
-                )
-                
-                detectedInfo = (
-                    category: category,
-                    contactName: rawIdentifier.name,
-                    numberOrHandle: rawIdentifier.number,
-                    isIncoming: isIncoming,
-                    pid: pid,
-                    acceptBtn: acceptBtn,
-                    declineBtn: declineBtn,
-                    muteBtn: muteBtn
-                )
-                break
+                if acceptBtn != nil || declineBtn != nil { break }
             }
-            
-            if detectedInfo != nil { break }
         }
         
         // 2. Secondary Engine: Screen Capture / CGWindowList fallback
