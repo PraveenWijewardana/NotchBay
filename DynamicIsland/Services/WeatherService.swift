@@ -33,6 +33,15 @@ public final class WeatherService: ObservableObject {
     @Published public var searchQuery: String = ""
     @Published public var isLoading: Bool = false
     @Published public var lastUpdated: Date?
+    @Published public var isAnimated: Bool = false
+    
+    public func startAnimations() {
+        if !isAnimated {
+            DispatchQueue.main.async { [weak self] in
+                self?.isAnimated = true
+            }
+        }
+    }
     
     private var refreshTimer: Timer?
     private let cityKey = "DynamicIsland_WeatherCity"
@@ -68,6 +77,10 @@ public final class WeatherService: ObservableObject {
             Task { @MainActor [weak self] in
                 self?.fetchWeather()
             }
+        }
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.isAnimated = true
         }
     }
     
