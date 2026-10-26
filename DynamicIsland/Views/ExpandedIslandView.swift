@@ -13,14 +13,16 @@ public struct ExpandedIslandView: View {
     
     public var body: some View {
         VStack(spacing: 8) {
-            // MARK: - Top Bar (Symmetrical Navigation on Left & Right Ears, Notch Clearance in Center)
+            // MARK: - Top Bar (Balanced Navigation Across Left & Right Ears)
             HStack(alignment: .center, spacing: 6) {
-                // Left Ear: Primary Dashboard Tabs (Home, System, Timers, Music)
+                // Left Ear: Dashboard & Workflow Tabs (Home, System, Timers, Music, Drop Shelf, AI Agents)
                 HStack(spacing: 4) {
                     topTabButton(index: 0, icon: "house.fill", title: "Home")
                     topTabButton(index: 1, icon: "gauge.with.needle.fill", title: "System")
                     topTabButton(index: 2, icon: "timer", title: "Timers & Stopwatch")
                     topTabButton(index: 3, icon: "music.note", title: "Now Playing")
+                    topTabButton(index: 4, icon: "tray.fill", title: "Drop Shelf")
+                    topTabButton(index: 5, icon: "sparkles", title: "Code Agents (AI)")
                 }
                 .padding(.horizontal, 5)
                 .padding(.vertical, 3.5)
@@ -29,12 +31,10 @@ public struct ExpandedIslandView: View {
                 .fixedSize(horizontal: true, vertical: false)
                 
                 // Camera Notch Clearance Spacer
-                Spacer(minLength: max(30, min(100, viewModel.physicalNotchWidth - 80)))
+                Spacer(minLength: max(20, min(80, viewModel.physicalNotchWidth - 120)))
                 
-                // Right Ear: Workflow Tabs (Drop Shelf, AI Agents, Calendar, Weather)
+                // Right Ear: Calendar & Weather Tabs
                 HStack(spacing: 4) {
-                    topTabButton(index: 4, icon: "tray.fill", title: "Drop Shelf")
-                    topTabButton(index: 5, icon: "sparkles", title: "Code Agents (AI)")
                     topTabButton(index: 6, icon: "calendar", title: "Calendar")
                     topTabButton(index: 7, icon: "cloud.sun.fill", title: "Weather")
                 }
@@ -163,6 +163,8 @@ public struct ExpandedIslandView: View {
     // MARK: - Top Tab Capsule Button
     private func topTabButton(index: Int, icon: String, title: String) -> some View {
         let isSelected = (viewModel.selectedPageIndex == index)
+        let isAgentTab = (index == 5)
+        let hasActiveAgent = isAgentTab && (viewModel.agentService.status == .thinking || viewModel.agentService.status == .coding || viewModel.agentService.status == .executing || viewModel.agentService.status == .awaitingPermission)
         
         return Button {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
@@ -181,7 +183,14 @@ public struct ExpandedIslandView: View {
                 
                 Image(systemName: icon)
                     .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-                    .foregroundColor(isSelected ? .black : .white.opacity(0.65))
+                    .foregroundColor(isSelected ? .black : (hasActiveAgent ? .cyan : .white.opacity(0.65)))
+                
+                if hasActiveAgent && !isSelected {
+                    Circle()
+                        .fill(Color.cyan)
+                        .frame(width: 4.5, height: 4.5)
+                        .offset(x: 7, y: -7)
+                }
             }
             .frame(width: 22, height: 22)
             .contentShape(Rectangle())

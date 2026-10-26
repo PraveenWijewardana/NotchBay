@@ -235,6 +235,29 @@ public final class AppSettings: ObservableObject {
         didSet { defaults.set(playAgentSoundNotification, forKey: "nb_playAgentSoundNotification") }
     }
     
+    // AI Agents to Display
+    @Published public var showAntigravityAgent: Bool {
+        didSet { defaults.set(showAntigravityAgent, forKey: "nb_showAntigravityAgent") }
+    }
+    @Published public var showClaudeAgent: Bool {
+        didSet { defaults.set(showClaudeAgent, forKey: "nb_showClaudeAgent") }
+    }
+    @Published public var showCursorAgent: Bool {
+        didSet { defaults.set(showCursorAgent, forKey: "nb_showCursorAgent") }
+    }
+    @Published public var showCopilotAgent: Bool {
+        didSet { defaults.set(showCopilotAgent, forKey: "nb_showCopilotAgent") }
+    }
+    
+    public var selectedAgentsList: [CodeAgentType] {
+        var list: [CodeAgentType] = []
+        if showAntigravityAgent { list.append(.antigravity) }
+        if showClaudeAgent { list.append(.claude) }
+        if showCursorAgent { list.append(.cursor) }
+        if showCopilotAgent { list.append(.copilot) }
+        return list.isEmpty ? [.antigravity] : list
+    }
+    
     // MARK: - Focus & Timers
     @Published public var pomodoroWorkMinutes: Int {
         didSet { defaults.set(pomodoroWorkMinutes, forKey: "nb_pomodoroWorkMinutes") }
@@ -312,6 +335,10 @@ public final class AppSettings: ObservableObject {
         self.autoDetectAgents = defaults.object(forKey: "nb_autoDetectAgents") as? Bool ?? true
         self.autoExpandOnToolPermission = defaults.object(forKey: "nb_autoExpandOnToolPermission") as? Bool ?? true
         self.playAgentSoundNotification = defaults.object(forKey: "nb_playAgentSoundNotification") as? Bool ?? true
+        self.showAntigravityAgent = defaults.object(forKey: "nb_showAntigravityAgent") as? Bool ?? true
+        self.showClaudeAgent = defaults.object(forKey: "nb_showClaudeAgent") as? Bool ?? true
+        self.showCursorAgent = defaults.object(forKey: "nb_showCursorAgent") as? Bool ?? true
+        self.showCopilotAgent = defaults.object(forKey: "nb_showCopilotAgent") as? Bool ?? false
         
         self.pomodoroWorkMinutes = defaults.object(forKey: "nb_pomodoroWorkMinutes") as? Int ?? 25
         self.pomodoroShortBreakMinutes = defaults.object(forKey: "nb_pomodoroShortBreakMinutes") as? Int ?? 5
@@ -375,6 +402,10 @@ public final class AppSettings: ObservableObject {
         autoDetectAgents = true
         autoExpandOnToolPermission = true
         playAgentSoundNotification = true
+        showAntigravityAgent = true
+        showClaudeAgent = true
+        showCursorAgent = true
+        showCopilotAgent = false
         
         pomodoroWorkMinutes = 25
         pomodoroShortBreakMinutes = 5

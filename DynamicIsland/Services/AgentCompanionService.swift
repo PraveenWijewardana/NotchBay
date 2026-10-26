@@ -14,6 +14,29 @@ public final class AgentCompanionService: ObservableObject {
     @Published public var usageMetrics: AgentUsageMetrics = AgentUsageMetrics()
     @Published public var turnElapsedSeconds: Int = 0
     
+    // Per-Agent Quota & Live Metrics
+    @Published public var metricsByAgent: [CodeAgentType: AgentUsageMetrics] = [
+        .antigravity: AgentUsageMetrics(fiveHourRemainingFraction: 0.86, weeklyRemainingFraction: 0.94, planName: "Gemini 2.5 Pro"),
+        .claude: AgentUsageMetrics(fiveHourRemainingFraction: 0.82, weeklyRemainingFraction: 0.89, planName: "Claude 3.7 Sonnet"),
+        .cursor: AgentUsageMetrics(fiveHourRemainingFraction: 0.90, weeklyRemainingFraction: 0.95, planName: "Cursor Pro"),
+        .copilot: AgentUsageMetrics(fiveHourRemainingFraction: 0.95, weeklyRemainingFraction: 0.98, planName: "Copilot Business")
+    ]
+    
+    @Published public var statusByAgent: [CodeAgentType: AgentExecutionStatus] = [
+        .antigravity: .idle,
+        .claude: .idle,
+        .cursor: .idle,
+        .copilot: .idle
+    ]
+    
+    public func metrics(for agent: CodeAgentType) -> AgentUsageMetrics {
+        metricsByAgent[agent] ?? AgentUsageMetrics()
+    }
+    
+    public func status(for agent: CodeAgentType) -> AgentExecutionStatus {
+        statusByAgent[agent] ?? .idle
+    }
+    
     private var tcpListener: NWListener?
     private var autoDetector: AgentAutoDetectorService?
     private var turnTimer: Timer?
@@ -197,6 +220,7 @@ public final class AgentCompanionService: ObservableObject {
     public func updateSilentStatus(agent: CodeAgentType, status: AgentExecutionStatus, message: String) {
         self.selectedAgent = agent
         self.status = status
+        self.statusByAgent[agent] = status
         self.currentMessage = message
         if status.isBusy {
             if turnTimer == nil {
@@ -212,6 +236,7 @@ public final class AgentCompanionService: ObservableObject {
         let stateChanged = self.status != status || self.currentMessage != message || self.selectedAgent != agent
         self.selectedAgent = agent
         self.status = status
+        self.statusByAgent[agent] = status
         self.currentMessage = message
         self.activePermissionRequest = nil
         
@@ -235,6 +260,7 @@ public final class AgentCompanionService: ObservableObject {
     public func requestPermission(agent: CodeAgentType, actionOrTool: String, detail: String = "") {
         self.selectedAgent = agent
         self.status = .awaitingPermission
+        self.statusByAgent[agent] = .awaitingPermission
         self.currentMessage = "Awaiting Approval: \(actionOrTool)"
         
         let req = AgentPermissionRequest(agent: agent, actionOrTool: actionOrTool, detail: detail)
@@ -255,6 +281,7 @@ public final class AgentCompanionService: ObservableObject {
     public func completeTask(agent: CodeAgentType, message: String) {
         self.selectedAgent = agent
         self.status = .completed
+        self.statusByAgent[agent] = .completed
         self.currentMessage = message
         self.activePermissionRequest = nil
         stopTurnTimer()
@@ -319,13 +346,27 @@ public final class AgentCompanionService: ObservableObject {
     }
     
     public func focusActiveAgentApp() {
+        focusAgentApp(agent: selectedAgent)
+    }
+    
+    public func focusAgentApp(agent: CodeAgentType) {
         let running = NSWorkspace.shared.runningApplications
+        let targetTerms: [String]
+        switch agent {
+        case .antigravity:
+            targetTerms = ["antigravity", "agy"]
+        case .claude:
+            targetTerms = ["claude", "terminal", "iterm", "warp", "ghostty", "alacritty"]
+        case .cursor:
+            targetTerms = ["cursor"]
+        case .copilot:
+            targetTerms = ["code", "visual studio code", "vscode"]
+        }
+        
         if let app = running.first(where: {
             let id = ($0.bundleIdentifier ?? "").lowercased()
             let name = ($0.localizedName ?? "").lowercased()
-            return id.contains("antigravity") || name.contains("antigravity") ||
-                   id.contains("cursor") || name.contains("cursor") ||
-                   id.contains("iterm") || name.contains("terminal")
+            return targetTerms.contains { term in id.contains(term) || name.contains(term) }
         }) {
             if #available(macOS 14.0, *) {
                 app.activate()

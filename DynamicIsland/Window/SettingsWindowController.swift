@@ -6,14 +6,19 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
     public static let shared = SettingsWindowController()
     
     private var window: NSWindow?
+    public let settingsModel = SettingsViewModel()
     
     public override init() {
         super.init()
     }
     
-    public func showWindow() {
+    public func showWindow(tab: SettingsTab? = nil) {
         // Automatically collapse the expanded notch when opening Settings
         NotchWindowController.shared.viewModel.setExpanded(false)
+        
+        if let tab = tab {
+            settingsModel.selectedTab = tab
+        }
         
         if let existing = window {
             existing.makeKeyAndOrderFront(nil)
@@ -22,7 +27,7 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
             return
         }
         
-        let settingsView = SettingsView()
+        let settingsView = SettingsView(model: settingsModel)
         let hostingController = NSHostingController(rootView: settingsView)
         
         let newWindow = NSWindow(

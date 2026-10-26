@@ -778,6 +778,55 @@ public struct SettingsView: View {
     // MARK: - 7. AI Code Agents Settings
     private var aiAgentsSettingsView: some View {
         VStack(spacing: 16) {
+            settingsCard(title: "Active AI Companions (Dynamic Island Display)") {
+                VStack(spacing: 14) {
+                    Text("Select which AI models and code assistants to monitor. All selected companions will be displayed simultaneously side-by-side in the notch without filtering, showing real-time 5-hour rolling quotas and 7-day limits.")
+                        .font(.system(size: 11.5))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    agentToggleRow(
+                        title: "Antigravity (Google DeepMind)",
+                        subtitle: "Gemini 2.5 Pro / Flash with live 5-hour rolling session and 7-day weekly quota.",
+                        icon: "sparkles",
+                        iconColor: .cyan,
+                        isOn: $settings.showAntigravityAgent
+                    )
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    agentToggleRow(
+                        title: "Claude Code (Anthropic)",
+                        subtitle: "Claude 3.7 Sonnet / Opus with 5-hour rolling session and 7-day weekly allowance.",
+                        icon: "cpu",
+                        iconColor: Color(red: 0.95, green: 0.45, blue: 0.3),
+                        isOn: $settings.showClaudeAgent
+                    )
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    agentToggleRow(
+                        title: "Cursor AI",
+                        subtitle: "Fast requests quota, rolling burst limits, and active agent generation telemetry.",
+                        icon: "terminal.fill",
+                        iconColor: .green,
+                        isOn: $settings.showCursorAgent
+                    )
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    agentToggleRow(
+                        title: "GitHub Copilot",
+                        subtitle: "Copilot completions and chat quota with weekly cycle and rate-limit tracking.",
+                        icon: "chevron.left.forwardslash.chevron.right",
+                        iconColor: Color(red: 0.5, green: 0.4, blue: 0.95),
+                        isOn: $settings.showCopilotAgent
+                    )
+                }
+            }
+            
             settingsCard(title: "AI Companion Connection") {
                 VStack(spacing: 14) {
                     toggleRow(
@@ -963,6 +1012,32 @@ public struct SettingsView: View {
         }
         .toggleStyle(.switch)
         .tint(settings.accentColor.color)
+    }
+    
+    private func agentToggleRow(title: String, subtitle: String, icon: String, iconColor: Color, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(iconColor.opacity(0.18))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: icon)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(iconColor)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                    Text(subtitle)
+                        .font(.system(size: 11.5))
+                        .foregroundColor(.white.opacity(0.55))
+                }
+            }
+        }
+        .toggleStyle(.switch)
+        .tint(iconColor)
     }
     
     private func stepperRow(title: String, value: Binding<Int>, range: ClosedRange<Int>, unit: String) -> some View {

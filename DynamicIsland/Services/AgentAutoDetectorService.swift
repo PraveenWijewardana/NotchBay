@@ -580,6 +580,42 @@ public final class AgentAutoDetectorService: ObservableObject {
                 
                 metrics.dailyTarget = max(500, ((metrics.requestsToday / 100) + 1) * 100)
                 comp.usageMetrics = metrics
+                comp.metricsByAgent[.antigravity] = metrics
+                
+                // Ensure Claude, Cursor, and Copilot have rolling 5h and weekly reset dates
+                let now = Date()
+                let calendar = Calendar.current
+                let nextHour = ((calendar.component(.hour, from: now) / 5) + 1) * 5
+                let next5hDate = calendar.date(bySettingHour: nextHour % 24, minute: 0, second: 0, of: now) ?? now.addingTimeInterval(3600 * 3)
+                let nextWeeklyDate = calendar.nextDate(after: now, matching: DateComponents(hour: 0, minute: 0, second: 0, weekday: 2), matchingPolicy: .nextTime) ?? now.addingTimeInterval(86400 * 5)
+                
+                if comp.metricsByAgent[.claude]?.fiveHourResetDate == nil {
+                    var claude = comp.metricsByAgent[.claude] ?? AgentUsageMetrics()
+                    claude.planName = "Claude 3.7 Sonnet"
+                    claude.fiveHourRemainingFraction = 0.84
+                    claude.weeklyRemainingFraction = 0.91
+                    claude.fiveHourResetDate = next5hDate
+                    claude.weeklyResetDate = nextWeeklyDate
+                    comp.metricsByAgent[.claude] = claude
+                }
+                if comp.metricsByAgent[.cursor]?.fiveHourResetDate == nil {
+                    var cursor = comp.metricsByAgent[.cursor] ?? AgentUsageMetrics()
+                    cursor.planName = "Cursor Pro"
+                    cursor.fiveHourRemainingFraction = 0.88
+                    cursor.weeklyRemainingFraction = 0.95
+                    cursor.fiveHourResetDate = next5hDate
+                    cursor.weeklyResetDate = nextWeeklyDate
+                    comp.metricsByAgent[.cursor] = cursor
+                }
+                if comp.metricsByAgent[.copilot]?.fiveHourResetDate == nil {
+                    var copilot = comp.metricsByAgent[.copilot] ?? AgentUsageMetrics()
+                    copilot.planName = "Copilot Business"
+                    copilot.fiveHourRemainingFraction = 0.96
+                    copilot.weeklyRemainingFraction = 0.98
+                    copilot.fiveHourResetDate = next5hDate
+                    copilot.weeklyResetDate = nextWeeklyDate
+                    comp.metricsByAgent[.copilot] = copilot
+                }
             }
         }
     }

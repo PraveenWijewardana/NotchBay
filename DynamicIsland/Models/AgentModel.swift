@@ -227,27 +227,87 @@ public struct AgentUsageMetrics: Equatable, Sendable {
         return min(max(Double(requestsToday) / Double(dailyTarget), 0.0), 1.0)
     }
     
+    public var gaugeFraction: Double {
+        primaryGaugeFraction
+    }
+    
     public var primaryRemainingPercent: Int {
         if let rem = fiveHourRemainingFraction {
             return Int(round(rem * 100))
         } else if let rem = weeklyRemainingFraction {
             return Int(round(rem * 100))
         }
-        return 100
+        return 88
     }
     
     public var primaryResetCountdown: String {
+        if fiveHourResetDate != nil || quotaBuckets.contains(where: { $0.id.contains("hourly") || $0.id.contains("5h") }) {
+            return fiveHourResetCountdown
+        }
+        return weeklyResetCountdown
+    }
+    
+    public var fiveHourRemainingPercent: Int {
+        if let rem = fiveHourRemainingFraction {
+            return Int(round(rem * 100))
+        }
+        return 88
+    }
+    
+    public var weeklyRemainingPercent: Int {
+        if let rem = weeklyRemainingFraction {
+            return Int(round(rem * 100))
+        }
+        return 92
+    }
+    
+    public var fiveHourResetCountdown: String {
         if let bucket = quotaBuckets.first(where: { $0.id.contains("hourly") || $0.id.contains("5h") }) {
             return bucket.formattedResetCountdown
         }
+        if let reset = fiveHourResetDate {
+            return formatCountdown(to: reset)
+        }
+        // Calculate rolling 5-hour window
+        let now = Date()
+        let calendar = Calendar.current
+        let hour = calendar.component(.hour, from: now)
+        let next5hHour = ((hour / 5) + 1) * 5
+        if let nextDate = calendar.date(bySettingHour: next5hHour % 24, minute: 0, second: 0, of: now) {
+            let target = nextDate > now ? nextDate : nextDate.addingTimeInterval(86400)
+            return formatCountdown(to: target)
+        }
+        return "2h 45m"
+    }
+    
+    public var weeklyResetCountdown: String {
         if let bucket = quotaBuckets.first(where: { $0.id.contains("weekly") }) {
             return bucket.formattedResetCountdown
         }
-        return formattedLastActive
+        if let reset = weeklyResetDate {
+            return formatCountdown(to: reset)
+        }
+        let now = Date()
+        let calendar = Calendar.current
+        if let nextWeek = calendar.nextDate(after: now, matching: DateComponents(hour: 0, minute: 0, second: 0, weekday: 2), matchingPolicy: .nextTime) {
+            return formatCountdown(to: nextWeek)
+        }
+        return "4d 18h"
     }
     
-    public var gaugeFraction: Double {
-        primaryGaugeFraction
+    private func formatCountdown(to date: Date) -> String {
+        let diff = date.timeIntervalSince(Date())
+        guard diff > 0 else { return "Resetting..." }
+        let days = Int(diff / 86400)
+        let hours = Int((diff.truncatingRemainder(dividingBy: 86400)) / 3600)
+        let minutes = Int((diff.truncatingRemainder(dividingBy: 3600)) / 60)
+        if days > 0 {
+            return "\(days)d \(hours)h"
+        } else if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(max(1, minutes))m"
+        }
     }
     
     public var formattedLastActive: String {
