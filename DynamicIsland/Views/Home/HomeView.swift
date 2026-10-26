@@ -311,7 +311,9 @@ public struct HomeView: View {
                         .font(.system(size: 9, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundColor(.white.opacity(0.6))
-                        .frame(width: 26, alignment: .trailing)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .frame(width: 32, alignment: .trailing)
                 }
                 .padding(.top, 2)
             }
