@@ -68,6 +68,26 @@ public final class CalendarService: ObservableObject {
         }
     }
     
+    public func nextYear() {
+        if let next = Calendar.current.date(byAdding: .year, value: 1, to: selectedDate) {
+            selectDate(next)
+        }
+    }
+    
+    public func previousYear() {
+        if let prev = Calendar.current.date(byAdding: .year, value: -1, to: selectedDate) {
+            selectDate(prev)
+        }
+    }
+    
+    public func goToToday() {
+        selectDate(Date())
+    }
+    
+    public var isViewingCurrentMonth: Bool {
+        Calendar.current.isDate(selectedDate, equalTo: Date(), toGranularity: .month)
+    }
+    
     public func openCalendarApp() {
         if let url = URL(string: "calshow:") {
             NSWorkspace.shared.open(url)

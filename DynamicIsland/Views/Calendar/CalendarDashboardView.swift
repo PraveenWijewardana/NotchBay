@@ -14,42 +14,115 @@ public struct CalendarDashboardView: View {
     
     public var body: some View {
         VStack(spacing: 8) {
-            // MARK: - Header: Month Nav & Open in Calendar App
+            // MARK: - Header: Fixed-Position Month Nav & Open in Calendar App
             HStack(alignment: .center) {
                 HStack(spacing: 8) {
                     Image(systemName: "calendar")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.red)
                     
-                    Text(calendarService.monthTitle)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    // Month Navigation Arrows
-                    HStack(spacing: 3) {
+                    // Month & Year Menu Title with fixed width so buttons never shift
+                    Menu {
                         Button {
-                            calendarService.previousMonth()
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                                calendarService.goToToday()
+                            }
                         } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(4)
-                                .background(Color.white.opacity(0.06))
-                                .clipShape(Circle())
+                            Label("Jump to Today", systemImage: "clock.arrow.circlepath")
                         }
-                        .buttonStyle(.plain)
+                        
+                        Divider()
                         
                         Button {
-                            calendarService.nextMonth()
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                                calendarService.previousYear()
+                            }
                         } label: {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundColor(.white.opacity(0.7))
-                                .padding(4)
-                                .background(Color.white.opacity(0.06))
-                                .clipShape(Circle())
+                            Label("Previous Year (-1 Year)", systemImage: "chevron.backward.2")
+                        }
+                        
+                        Button {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                                calendarService.nextYear()
+                            }
+                        } label: {
+                            Label("Next Year (+1 Year)", systemImage: "chevron.forward.2")
+                        }
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text(calendarService.monthTitle)
+                                .font(.system(size: 14.5, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 7.5, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.4))
+                        }
+                    }
+                    .menuStyle(.borderlessButton)
+                    .frame(width: 142, alignment: .leading)
+                    
+                    // Fixed-Location Month Navigation Stepper (STATIONARY - NEVER MOVES ON CLICK)
+                    HStack(spacing: 1) {
+                        Button {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                                calendarService.previousMonth()
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
+                                .frame(width: 26, height: 22)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .help("Previous Month")
+                        
+                        Rectangle()
+                            .fill(Color.white.opacity(0.12))
+                            .frame(width: 1, height: 12)
+                        
+                        Button {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.8)) {
+                                calendarService.nextMonth()
+                            }
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.85))
+                                .frame(width: 26, height: 22)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Next Month")
+                    }
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 1))
+                    
+                    // Quick "Today" jump button (appears when navigated away from current month)
+                    if !calendarService.isViewingCurrentMonth {
+                        Button {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                                calendarService.goToToday()
+                            }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Circle()
+                                    .fill(Color.red)
+                                    .frame(width: 4, height: 4)
+                                Text("Today")
+                                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Color.red.opacity(0.2))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(Color.red.opacity(0.4), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                        .transition(.scale.combined(with: .opacity))
                     }
                 }
                 
@@ -132,6 +205,20 @@ public struct CalendarDashboardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color(white: 0.12)))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
+                .gesture(
+                    DragGesture(minimumDistance: 25)
+                        .onEnded { value in
+                            if value.translation.width < -25 {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    calendarService.nextMonth()
+                                }
+                            } else if value.translation.width > 25 {
+                                withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                                    calendarService.previousMonth()
+                                }
+                            }
+                        }
+                )
                 
                 // Right Card: Agenda / Event List
                 VStack(alignment: .leading, spacing: 6) {
