@@ -158,18 +158,33 @@ public final class FocusService: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
         
-        // Step 1: Attempt to check active focus from DB, INFocusStatusCenter, or Control Center preferences
+        // Step 1: Attempt to check active focus from DB, helper shortcut, INFocusStatusCenter, or Control Center preferences
         var hasActiveAssertion = false
-        var activeModeId: String? = nil
+        var detectedMode: AppleFocusMode? = nil
         
         let dbResult = checkAssertionsDatabase()
         if dbResult.0 {
             hasActiveAssertion = true
-            activeModeId = dbResult.1
-        } else if let intentsFocused = checkIntentsFocusStatus(), intentsFocused {
-            hasActiveAssertion = true
-        } else if checkControlCenterFocusActive() {
-            hasActiveAssertion = true
+            if let id = dbResult.1 {
+                detectedMode = matchMode(for: id)
+            }
+        }
+        
+        // Step 2: If DB access is blocked by macOS TCC, try querying helper shortcut if installed
+        if detectedMode == nil {
+            if let shortcutMode = queryActiveFocusViaShortcut() {
+                hasActiveAssertion = true
+                detectedMode = shortcutMode
+            }
+        }
+        
+        // Step 3: Check system status indicators
+        if !hasActiveAssertion {
+            if let intentsFocused = checkIntentsFocusStatus(), intentsFocused {
+                hasActiveAssertion = true
+            } else if checkControlCenterFocusActive() {
+                hasActiveAssertion = true
+            }
         }
         
         var newIsActive = false
@@ -179,10 +194,14 @@ public final class FocusService: ObservableObject {
             // macOS system has an active Focus mode confirmed
             self.lastSystemAssertionState = true
             newIsActive = true
-            if let modeId = activeModeId {
-                newMode = matchMode(for: modeId)
+            if let mode = detectedMode {
+                newMode = mode
+            } else if isUserSessionActive, let cur = self.activeMode {
+                // User explicitly selected this mode in NotchBay
+                newMode = cur
             } else {
-                newMode = self.activeMode ?? lastKnownActiveMode
+                // Generic Apple Focus is on, but exact profile is not yet specified
+                newMode = nil
             }
         } else {
             // macOS system has NO active assertion
@@ -191,28 +210,33 @@ public final class FocusService: ObservableObject {
                 self.lastSystemAssertionState = false
                 self.isUserSessionActive = false
                 newIsActive = false
-            } else if isUserSessionActive {
+            } else if isUserSessionActive, let cur = self.activeMode {
                 // User started a session inside NotchBay, keep it alive
                 newIsActive = true
-                newMode = self.activeMode ?? lastKnownActiveMode
+                newMode = cur
             } else {
                 newIsActive = false
             }
         }
         
-        // Step 3: Apply state updates
-        let stateChanged = (self.isAppleFocusActive != newIsActive) || (newMode != nil && self.activeMode?.id != newMode?.id)
+        // Step 4: Apply state updates
+        let stateChanged = (self.isAppleFocusActive != newIsActive) || (newMode?.id != self.activeMode?.id)
         
         self.isAppleFocusActive = newIsActive
         self.isActive = newIsActive
         
         if newIsActive {
-            let mode = newMode ?? lastKnownActiveMode
-            self.activeMode = mode
-            self.activeModeName = mode.name
-            self.activeModeIcon = mode.iconName
+            if let mode = newMode {
+                self.activeMode = mode
+                self.activeModeName = mode.name
+                self.activeModeIcon = mode.iconName
+                self.lastKnownActiveMode = mode
+            } else {
+                self.activeMode = nil
+                self.activeModeName = "Focus"
+                self.activeModeIcon = "moon.fill"
+            }
             self.statusSubtitle = "Active"
-            self.lastKnownActiveMode = mode
         } else {
             self.activeMode = nil
             self.activeModeName = "Focus"
@@ -284,6 +308,49 @@ public final class FocusService: ObservableObject {
         } else {
             NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Shortcuts.app"))
         }
+    }
+    
+    public func installSyncShortcut() {
+        if let url = Bundle.main.url(forResource: "Get_Current_Focus", withExtension: "shortcut") {
+            NSWorkspace.shared.open(url)
+        } else {
+            let tmpURL = URL(fileURLWithPath: "/tmp/Get_Current_Focus.shortcut")
+            if FileManager.default.fileExists(atPath: tmpURL.path) {
+                NSWorkspace.shared.open(tmpURL)
+            }
+        }
+    }
+    
+    public func openFullDiskAccessSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    private func queryActiveFocusViaShortcut() -> AppleFocusMode? {
+        let shortcuts = getInstalledShortcuts()
+        guard let shortcut = shortcuts.first(where: {
+            let lower = $0.lowercased()
+            return lower == "get current focus" || lower == "current focus" || lower == "get focus"
+        }) else { return nil }
+        
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
+        task.arguments = ["run", shortcut]
+        let stdout = Pipe()
+        task.standardOutput = stdout
+        task.standardError = Pipe()
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = stdout.fileHandleForReading.readDataToEndOfFile()
+            if let output = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines), !output.isEmpty {
+                if output.lowercased() != "none" && output.lowercased() != "off" {
+                    return matchMode(for: output)
+                }
+            }
+        } catch {}
+        return nil
     }
     
     // MARK: - System Execution Helpers

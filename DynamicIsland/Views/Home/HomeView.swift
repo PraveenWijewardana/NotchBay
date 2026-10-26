@@ -601,9 +601,21 @@ public struct HomeView: View {
                 Divider()
                 
                 Button {
+                    focusService.installSyncShortcut()
+                } label: {
+                    Label("Add Focus Sync Shortcut...", systemImage: "sparkles")
+                }
+                
+                Button {
+                    focusService.openFullDiskAccessSettings()
+                } label: {
+                    Label("Grant Full Disk Access (Raycast Style)...", systemImage: "lock.shield")
+                }
+                
+                Button {
                     focusService.openFocusSettings()
                 } label: {
-                    Label("Focus Settings...", systemImage: "gearshape")
+                    Label("macOS Focus Settings...", systemImage: "gearshape")
                 }
                 
                 Button {
