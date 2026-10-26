@@ -12,6 +12,9 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
     
     public func showWindow() {
+        // Automatically collapse the expanded notch when opening Settings
+        NotchWindowController.shared.viewModel.setExpanded(false)
+        
         if let existing = window {
             existing.makeKeyAndOrderFront(nil)
             existing.center()
