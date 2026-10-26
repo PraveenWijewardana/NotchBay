@@ -12,14 +12,14 @@ public struct DropShelfView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             // MARK: - SubTab Switcher (Drop Shelf vs. Clipboard History)
             subTabBar
                 .padding(.horizontal, 4)
             
             if shelfService.activeSubTab == 0 {
                 // Drop Shelf View Mode
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     topFilterBar
                         .padding(.horizontal, 4)
                     
@@ -41,7 +41,7 @@ public struct DropShelfView: View {
                             cardsScrollView
                         }
                     }
-                    .frame(height: 142)
+                    .frame(height: 126)
                     .onDrop(of: [.fileURL, .text, .image], isTargeted: Binding(
                         get: { shelfService.isTargeted },
                         set: { shelfService.isTargeted = $0 }
@@ -83,6 +83,7 @@ public struct DropShelfView: View {
                 clipboardHistoryContent
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - SubTab Switcher (Drop Shelf vs. Clipboard History)
@@ -195,7 +196,7 @@ public struct DropShelfView: View {
             }
             .padding(.horizontal, 4)
             
-            // Clipboard Cards Zone (Strictly matches 142pt height limit)
+            // Clipboard Cards Zone (Strictly matches 126pt height limit)
             ZStack {
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color.white.opacity(0.02))
@@ -224,11 +225,11 @@ public struct DropShelfView: View {
                             }
                         }
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 5)
                     }
                 }
             }
-            .frame(height: 142)
+            .frame(height: 126)
         }
     }
     
@@ -320,7 +321,7 @@ public struct DropShelfView: View {
                         .padding(6)
                 }
             }
-            .frame(height: 58)
+            .frame(height: 48)
             
             // Bottom Action: 1-Click Copy Button
             Button {
@@ -334,14 +335,14 @@ public struct DropShelfView: View {
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
+                .padding(.vertical, 3.5)
                 .background(Color.white.opacity(0.9))
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             }
             .buttonStyle(.plain)
         }
-        .padding(8)
-        .frame(width: 140, height: 126)
+        .padding(7)
+        .frame(width: 140, height: 114)
         .background(Color(white: 0.12))
         .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .overlay(
@@ -560,7 +561,7 @@ public struct DropShelfView: View {
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.vertical, 4)
         }
     }
     
@@ -571,17 +572,17 @@ public struct DropShelfView: View {
         
         return ZStack(alignment: .topTrailing) {
             VStack(spacing: 0) {
-                // Top Visual Preview Area (Height ~104pt)
+                // Top Visual Preview Area (Height ~90pt)
                 cardTopPreview(item: item)
-                    .frame(width: 106, height: 104)
+                    .frame(width: 106, height: 90)
                     .clipped()
                 
-                // Bottom Badge & Time Bar (Height ~28pt)
+                // Bottom Badge & Time Bar (Height ~26pt)
                 cardBottomBar(item: item)
-                    .frame(width: 106, height: 28)
+                    .frame(width: 106, height: 26)
                     .background(Color(red: 0.04, green: 0.04, blue: 0.05))
             }
-            .frame(width: 106, height: 132)
+            .frame(width: 106, height: 116)
             .background(Color(red: 0.09, green: 0.09, blue: 0.11))
             .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(
