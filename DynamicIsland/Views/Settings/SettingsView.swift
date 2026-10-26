@@ -947,15 +947,33 @@ public struct SettingsView: View {
                             Text("NotchBay for macOS")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
+                            Text("Developed by Praveen Wijewardana")
+                                .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                                .foregroundColor(settings.accentColor.color)
                             Text("Version 1.0 (Universal Apple Silicon & Intel)")
-                                .font(.system(size: 12))
+                                .font(.system(size: 11.5))
                                 .foregroundColor(.white.opacity(0.6))
                             Text("100% Native SwiftUI & AppKit • Zero Dependencies")
                                 .font(.system(size: 11))
-                                .foregroundColor(settings.accentColor.color)
+                                .foregroundColor(.white.opacity(0.45))
                         }
                         
                         Spacer()
+                    }
+                    
+                    Divider().background(Color.white.opacity(0.08))
+                    
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 15))
+                            .foregroundColor(settings.accentColor.color)
+                        Text("Developer")
+                            .font(.system(size: 12.5, weight: .medium))
+                            .foregroundColor(.white.opacity(0.75))
+                        Spacer()
+                        Text("Praveen Wijewardana")
+                            .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
                     }
                     
                     Divider().background(Color.white.opacity(0.08))
