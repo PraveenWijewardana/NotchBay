@@ -148,8 +148,8 @@ public final class MediaControllerService: ObservableObject {
             }
         }
         
-        // Smooth position syncing: only snap if drifting by more than 1.5 seconds
-        if trackChanged || abs(currentTrack.currentPosition - position) > 1.5 {
+        // Precise position syncing: snap if track changed or drifting by more than 0.5s
+        if trackChanged || abs(currentTrack.currentPosition - position) > 0.5 {
             currentTrack.currentPosition = position
         }
         
@@ -490,8 +490,11 @@ public final class MediaControllerService: ObservableObject {
     }
     
     // MARK: - Playback Ticker & Visualizer
+    private var tickerTickCount: Int = 0
+    
     private func startPlaybackTicker() {
         playbackTickerTimer?.invalidate()
+        tickerTickCount = 0
         let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
@@ -499,14 +502,65 @@ public final class MediaControllerService: ObservableObject {
                     if self.currentTrack.currentPosition < self.currentTrack.duration {
                         self.currentTrack.currentPosition += 1.0
                     }
+                    self.tickerTickCount += 1
+                    // Actively resync ground truth position from Spotify/Music every 2s to eliminate drift
+                    if self.tickerTickCount % 2 == 0 {
+                        self.syncPlayerPositionOnly()
+                    }
                 } else {
                     self.stopPlaybackTicker()
                 }
             }
         }
-        timer.tolerance = 0.2
+        timer.tolerance = 0.1
         RunLoop.main.add(timer, forMode: .common)
         playbackTickerTimer = timer
+    }
+    
+    public nonisolated func syncPlayerPositionOnly() {
+        Task.detached(priority: .utility) { [weak self] in
+            guard let self = self else { return }
+            let spotifyRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").isEmpty
+            let musicRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.Music").isEmpty
+            
+            if spotifyRunning {
+                let script = "tell application \"Spotify\" to (player position as string) & \"|||\" & (player state as string)"
+                if let raw = self.executeAppleScript(script) {
+                    let parts = raw.components(separatedBy: "|||")
+                    if parts.count >= 2 {
+                        let pos = Double(parts[0].trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+                        let state = parts[1].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                        let isPlaying = (state == "playing" || state == "kpsp")
+                        await MainActor.run {
+                            self.currentTrack.isPlaying = isPlaying
+                            if abs(self.currentTrack.currentPosition - pos) > 0.5 {
+                                self.currentTrack.currentPosition = pos
+                            }
+                        }
+                        return
+                    }
+                }
+            }
+            
+            if musicRunning {
+                let script = "tell application \"Music\" to (player position as string) & \"|||\" & (player state as string)"
+                if let raw = self.executeAppleScript(script) {
+                    let parts = raw.components(separatedBy: "|||")
+                    if parts.count >= 2 {
+                        let pos = Double(parts[0].trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+                        let state = parts[1].trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                        let isPlaying = (state == "playing" || state == "kpsp")
+                        await MainActor.run {
+                            self.currentTrack.isPlaying = isPlaying
+                            if abs(self.currentTrack.currentPosition - pos) > 0.5 {
+                                self.currentTrack.currentPosition = pos
+                            }
+                        }
+                        return
+                    }
+                }
+            }
+        }
     }
     
     private func stopPlaybackTicker() {

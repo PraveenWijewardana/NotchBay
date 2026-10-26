@@ -12,25 +12,21 @@ public struct AgentDashboardView: View {
     
     public var body: some View {
         VStack(spacing: 8) {
-            // MARK: - Header: Title + Agent Selector + Simulation Menu
+            // MARK: - Header: Title + Status + Agent Selector
             headerRow
                 .padding(.horizontal, 2)
             
-            // MARK: - 3-Column Layout: Live Status & Actions | AI Usage Gauge | Activity Stream
+            // MARK: - Productive 2-Card Bento: Live Mission HUD & Live Quota Telemetry
             HStack(spacing: 8) {
-                // Column 1: Live Status & Wait / Request Permission / Finish
-                liveStatusCard
-                    .frame(width: 156)
-                
-                // Column 2: AI Usage Gauge (CodeNotch Implementation)
-                aiUsageGaugeCard
-                    .frame(width: 144)
-                
-                // Column 3: Live Activity Stream
-                activityStreamCard
+                // Card 1: Active Mission, Real-time Task HUD & Approval Actions
+                liveMissionCard
                     .frame(maxWidth: .infinity)
+                
+                // Card 2: AI Quota & Model Telemetry
+                aiUsageTelemetryCard
+                    .frame(width: 178)
             }
-            .frame(height: 142)
+            .frame(height: 144)
         }
     }
     
@@ -43,15 +39,15 @@ public struct AgentDashboardView: View {
                     .foregroundColor(.cyan)
                 
                 Text("AI Agents")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(.system(size: 13.5, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 
-                // Live companion daemon pill
+                // Live companion daemon status pill
                 HStack(spacing: 4) {
                     Circle()
                         .fill(agentService.isServerRunning ? Color.green : Color.orange)
                         .frame(width: 5, height: 5)
-                        .shadow(color: .green.opacity(0.8), radius: 2)
+                        .shadow(color: (agentService.isServerRunning ? Color.green : Color.orange).opacity(0.8), radius: 2)
                     Text(agentService.isServerRunning ? "Listening" : "Connecting")
                         .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
                         .foregroundColor(.secondary)
@@ -99,46 +95,78 @@ public struct AgentDashboardView: View {
         }
     }
     
-    // MARK: - Column 1: Live Status & Interactive Action Card
-    private var liveStatusCard: some View {
+    // MARK: - Card 1: Live Agent Mission & Execution HUD
+    private var liveMissionCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Header: Agent Name + Status Badge
-            HStack {
-                HStack(spacing: 4) {
+            // Top Bar: Agent Branding + Execution Pill + Turn Duration + Focus IDE
+            HStack(alignment: .center) {
+                HStack(spacing: 4.5) {
                     Image(systemName: agentService.selectedAgent.iconName)
                         .foregroundColor(agentService.selectedAgent.accentColor)
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, weight: .bold))
                     Text(agentService.selectedAgent.rawValue.uppercased())
-                        .font(.system(size: 8, weight: .bold, design: .rounded))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
+                        .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.85))
                 }
-                
-                Spacer()
                 
                 // Status Badge
                 HStack(spacing: 3.5) {
                     Image(systemName: agentService.status.icon)
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: 7.5, weight: .bold))
                     Text(agentService.status.rawValue)
-                        .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
                 }
                 .foregroundColor(agentService.status.color)
                 .padding(.horizontal, 5)
-                .padding(.vertical, 2)
+                .padding(.vertical, 1.5)
                 .background(agentService.status.color.opacity(0.18))
                 .clipShape(Capsule())
+                
+                if agentService.status.isBusy {
+                    HStack(spacing: 3) {
+                        Image(systemName: "timer")
+                            .font(.system(size: 7.5))
+                        Text(agentService.formattedDuration)
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundColor(.cyan)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1.5)
+                    .background(Color.cyan.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                
+                Spacer()
+                
+                // Bring IDE / Terminal forward
+                Button {
+                    agentService.focusActiveAgentApp()
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.up.forward.app.fill")
+                            .font(.system(size: 8))
+                        Text("Focus IDE")
+                            .font(.system(size: 8, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.white.opacity(0.75))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help("Bring active editor or terminal to front")
             }
             
-            // Content based on lifecycle state
+            // Middle Content: Adaptive by state
             if let req = agentService.activePermissionRequest {
-                // 1. REQUEST PERMISSION STATE
+                // 1. GENUINE PERMISSION / QUESTION STATE
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 3) {
                         Image(systemName: "exclamationmark.shield.fill")
                             .foregroundColor(.yellow)
                             .font(.system(size: 9))
-                        Text("PERMISSION REQUIRED")
+                        Text("ACTION APPROVAL REQUIRED")
                             .font(.system(size: 8, weight: .bold, design: .rounded))
                             .foregroundColor(.yellow)
                     }
@@ -167,10 +195,10 @@ public struct AgentDashboardView: View {
                                     .font(.system(size: 9.5, weight: .bold, design: .rounded))
                             }
                             .foregroundColor(.black)
-                            .frame(maxWidth: .infinity)
+                            .padding(.horizontal, 10)
                             .padding(.vertical, 4)
                             .background(Color.green)
-                            .cornerRadius(5)
+                            .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
                         
@@ -180,75 +208,66 @@ public struct AgentDashboardView: View {
                             }
                         } label: {
                             Text("Deny")
-                                .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                                .foregroundColor(.white.opacity(0.8))
-                                .frame(maxWidth: .infinity)
+                                .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.75))
+                                .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
                                 .background(Color.white.opacity(0.12))
-                                .cornerRadius(5)
+                                .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
                     }
                 }
             } else if agentService.status.isBusy {
-                // 2. WAIT / BUSY STATE (Thinking or Running Tool)
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(spacing: 6) {
-                        ZStack {
-                            Circle()
-                                .stroke(agentService.selectedAgent.accentColor.opacity(0.3), lineWidth: 2)
-                                .frame(width: 18, height: 18)
-                            Circle()
-                                .trim(from: 0.1, to: 0.75)
-                                .stroke(agentService.selectedAgent.accentColor, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                                .frame(width: 18, height: 18)
-                                .rotationEffect(.degrees(Double((agentService.turnElapsedSeconds % 60) * 60)))
-                                .animation(.easeInOut(duration: 0.8), value: agentService.turnElapsedSeconds)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(agentService.status == .thinking ? "Thinking..." : "Running Tool...")
-                                .font(.system(size: 10, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                            Text("\(agentService.formattedTurnElapsed) elapsed")
-                                .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                                .foregroundColor(.secondary)
-                        }
+                // 2. ACTIVE WORKING / EXECUTING TOOL STATE
+                VStack(alignment: .leading, spacing: 3.5) {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 5, height: 5)
+                            .shadow(color: Color.orange.opacity(0.8), radius: 2)
+                        Text("CURRENT TASK")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
+                            .foregroundColor(.orange)
                     }
-                    .padding(.top, 2)
                     
                     Text(agentService.currentMessage)
-                        .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.85))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
                         .lineLimit(3)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(5)
+                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.black.opacity(0.35)))
                     
                     Spacer(minLength: 0)
                     
                     HStack(spacing: 4) {
-                        Circle()
-                            .fill(agentService.status.color)
-                            .frame(width: 4.5, height: 4.5)
-                        Text("Active Turn In Progress")
-                            .font(.system(size: 8, weight: .medium))
+                        Text("Live Turn Active • \(agentService.formattedDuration)")
+                            .font(.system(size: 8, weight: .medium, design: .rounded))
                             .foregroundColor(.white.opacity(0.5))
+                        
+                        Spacer()
+                        
+                        Text("Auto-Streaming")
+                            .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                            .foregroundColor(.secondary)
                     }
                 }
             } else if agentService.status == .completed {
-                // 3. FINISH STATE
-                VStack(alignment: .leading, spacing: 4) {
+                // 3. TASK COMPLETED STATE
+                VStack(alignment: .leading, spacing: 3.5) {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.system(size: 9, weight: .bold))
                             .foregroundColor(.green)
-                        Text("Turn Finished")
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                        Text("TASK COMPLETED")
+                            .font(.system(size: 8, weight: .bold, design: .rounded))
                             .foregroundColor(.green)
                     }
                     
                     Text(agentService.currentMessage)
-                        .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.9))
                         .lineLimit(3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
@@ -258,26 +277,26 @@ public struct AgentDashboardView: View {
                         Circle()
                             .fill(Color.green)
                             .frame(width: 4.5, height: 4.5)
-                        Text("Ready for next prompt")
+                        Text("Ready for next instruction")
                             .font(.system(size: 8, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.white.opacity(0.55))
                     }
                 }
             } else {
                 // 4. IDLE STATE
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
-                        Image(systemName: "moon.stars.fill")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.secondary)
-                        Text("Agent Idle")
-                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                            .foregroundColor(.secondary)
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundColor(agentService.selectedAgent.accentColor)
+                        Text("Agent Standby")
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.85))
                     }
                     
                     Text(agentService.currentMessage)
-                        .font(.system(size: 9.5, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(.white.opacity(0.75))
                         .lineLimit(2)
                     
                     Spacer(minLength: 0)
@@ -285,22 +304,22 @@ public struct AgentDashboardView: View {
                     HStack(spacing: 4) {
                         Circle()
                             .fill(Color.secondary)
-                            .frame(width: 4.5, height: 4.5)
-                        Text("Auto-detects IDE & CLI")
-                            .font(.system(size: 8, weight: .medium))
+                            .frame(width: 4, height: 4)
+                        Text("Listening to local daemon on port 19842 & IDE transcripts")
+                            .font(.system(size: 7.5, weight: .medium))
                             .foregroundColor(.secondary)
                     }
                 }
             }
         }
-        .padding(8)
+        .padding(9)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(white: 0.10)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(white: 0.08)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
     }
     
-    // MARK: - Column 2: AI Usage Gauge Card (CodeNotch Implementation)
-    private var aiUsageGaugeCard: some View {
+    // MARK: - Card 2: AI Quota & Model Telemetry
+    private var aiUsageTelemetryCard: some View {
         let metrics = agentService.usageMetrics
         let isLive = metrics.isLiveQuotaConnected
         let remainingPercent = metrics.primaryRemainingPercent
@@ -320,7 +339,7 @@ public struct AgentDashboardView: View {
             HStack {
                 HStack(spacing: 4) {
                     Image(systemName: "gauge.with.needle.fill")
-                        .font(.system(size: 9.5))
+                        .font(.system(size: 9))
                         .foregroundColor(isLive ? ringColor : .cyan)
                     Text("AI USAGE")
                         .font(.system(size: 8, weight: .bold, design: .rounded))
@@ -332,7 +351,7 @@ public struct AgentDashboardView: View {
                 if isLive {
                     Text(metrics.primaryResetCountdown)
                         .font(.system(size: 7.5, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(.white.opacity(0.65))
                 } else {
                     Text(metrics.formattedLastActive)
                         .font(.system(size: 7.5, weight: .semibold, design: .rounded))
@@ -344,24 +363,24 @@ public struct AgentDashboardView: View {
             HStack(spacing: 8) {
                 ZStack {
                     Circle()
-                        .stroke(Color.white.opacity(0.10), lineWidth: 4)
-                        .frame(width: 44, height: 44)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 4.5)
+                        .frame(width: 46, height: 46)
                     
                     Circle()
                         .trim(from: 0.0, to: CGFloat(max(0.04, min(1.0, isLive ? (Double(remainingPercent) / 100.0) : metrics.gaugeFraction))))
                         .stroke(
                             isLive
-                                ? LinearGradient(colors: [ringColor, ringColor.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                ? LinearGradient(colors: [ringColor, ringColor.opacity(0.75)], startPoint: .topLeading, endPoint: .bottomTrailing)
                                 : LinearGradient(colors: [.cyan, Color(red: 0.7, green: 0.4, blue: 1.0)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                            style: StrokeStyle(lineWidth: 4.5, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 46, height: 46)
                     
                     VStack(spacing: 0) {
                         if isLive {
                             Text("\(remainingPercent)%")
-                                .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
                             Text("left")
@@ -397,11 +416,6 @@ public struct AgentDashboardView: View {
                                 .font(.system(size: 7.5, weight: .medium, design: .rounded))
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
-                        } else {
-                            Text("\(metrics.activeSessionsCount) sessions")
-                                .font(.system(size: 7.5, weight: .medium, design: .rounded))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
                         }
                     } else {
                         Text("Requests Today")
@@ -412,11 +426,6 @@ public struct AgentDashboardView: View {
                         Text("\(metrics.requestsToday) model turns")
                             .font(.system(size: 8, weight: .medium, design: .rounded))
                             .foregroundColor(.cyan)
-                            .lineLimit(1)
-                        
-                        Text("\(metrics.activeSessionsCount) active sessions")
-                            .font(.system(size: 7.5, weight: .medium, design: .rounded))
-                            .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
                 }
@@ -456,67 +465,9 @@ public struct AgentDashboardView: View {
             .padding(4.5)
             .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.04)))
         }
-        .padding(8)
+        .padding(9)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(white: 0.10)))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
-    }
-    
-    // MARK: - Column 3: Activity Stream Card
-    private var activityStreamCard: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
-                HStack(spacing: 4) {
-                    Image(systemName: "list.bullet.rectangle.portrait.fill")
-                        .font(.system(size: 9.5))
-                        .foregroundColor(.cyan)
-                    Text("ACTIVITY STREAM")
-                        .font(.system(size: 8, weight: .bold, design: .rounded))
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Text("\(agentService.activityLog.count) events")
-                    .font(.system(size: 7.5, weight: .medium))
-                    .foregroundColor(.secondary)
-            }
-            
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 4) {
-                    ForEach(agentService.activityLog) { item in
-                        HStack(alignment: .top, spacing: 5) {
-                            Circle()
-                                .fill(item.status.color)
-                                .frame(width: 4.5, height: 4.5)
-                                .padding(.top, 3.5)
-                            
-                            VStack(alignment: .leading, spacing: 1) {
-                                HStack {
-                                    Text(item.agent.rawValue)
-                                        .font(.system(size: 8.5, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                    Text(item.formattedTime)
-                                        .font(.system(size: 7.5, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.secondary)
-                                }
-                                
-                                Text(item.message)
-                                    .font(.system(size: 8.5))
-                                    .foregroundColor(.white.opacity(0.8))
-                                    .lineLimit(2)
-                            }
-                        }
-                        .padding(4)
-                        .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.04)))
-                    }
-                }
-            }
-        }
-        .padding(8)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(white: 0.10)))
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(white: 0.08)))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
     }
     

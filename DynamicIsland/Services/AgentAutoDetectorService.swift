@@ -417,27 +417,6 @@ public final class AgentAutoDetectorService: ObservableObject {
         guard let string = String(data: data, encoding: .utf8) else { return }
         let lines = string.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         
-        // Check conversations/<convId>.db for pending permission (status == 2 in steps)
-        let dbUrl = homeDir.appendingPathComponent(".gemini/antigravity/conversations/\(convId).db")
-        if FileManager.default.fileExists(atPath: dbUrl.path) {
-            var db: OpaquePointer?
-            if sqlite3_open_v2(dbUrl.path, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK {
-                defer { sqlite3_close(db) }
-                var stmt: OpaquePointer?
-                if sqlite3_prepare_v2(db, "SELECT status FROM steps ORDER BY idx DESC LIMIT 1", -1, &stmt, nil) == SQLITE_OK {
-                    if sqlite3_step(stmt) == SQLITE_ROW {
-                        let stepStatus = sqlite3_column_int(stmt, 0)
-                        if stepStatus == 2 {
-                            companion?.requestPermission(agent: .antigravity, actionOrTool: "Action Approval", detail: "Approval required to proceed")
-                            sqlite3_finalize(stmt)
-                            return
-                        }
-                    }
-                    sqlite3_finalize(stmt)
-                }
-            }
-        }
-        
         guard let lastLine = lines.last,
               let lineData = lastLine.data(using: .utf8),
               let json = (try? JSONSerialization.jsonObject(with: lineData)) as? [String: Any] else { return }
@@ -465,11 +444,11 @@ public final class AgentAutoDetectorService: ObservableObject {
                 let toolName = firstTool["name"] as? String ?? "tool"
                 let actionText = toolAction ?? toolSummary ?? "Executing \(toolName)"
                 
-                var needsApproval = toolName.contains("ask_question") || toolName.contains("permission")
-                if !needsApproval, let args = firstTool["arguments"] as? [String: Any],
-                   let meta = args["ArtifactMetadata"] as? [String: Any],
-                   meta["RequestFeedback"] as? Bool == true {
-                    needsApproval = true
+                var needsApproval = toolName == "ask_question"
+                if !needsApproval, let args = firstTool["arguments"] as? [String: Any] {
+                    if let bypass = args["BypassSandbox"] as? Bool, bypass == true {
+                        needsApproval = true
+                    }
                 }
                 
                 if needsApproval {

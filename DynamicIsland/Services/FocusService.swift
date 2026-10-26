@@ -114,6 +114,7 @@ public final class FocusService: ObservableObject {
         
         // Initial setup and check
         loadAvailableAppleModes()
+        requestAuthorizationIfNeeded()
         refreshFocusState()
         
         // Start continuous background sync
@@ -157,8 +158,19 @@ public final class FocusService: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
         
-        // Step 1: Attempt to read macOS DoNotDisturb database files
-        let (hasActiveAssertion, activeModeId) = checkAssertionsDatabase()
+        // Step 1: Attempt to check active focus from DB, INFocusStatusCenter, or Control Center preferences
+        var hasActiveAssertion = false
+        var activeModeId: String? = nil
+        
+        let dbResult = checkAssertionsDatabase()
+        if dbResult.0 {
+            hasActiveAssertion = true
+            activeModeId = dbResult.1
+        } else if let intentsFocused = checkIntentsFocusStatus(), intentsFocused {
+            hasActiveAssertion = true
+        } else if checkControlCenterFocusActive() {
+            hasActiveAssertion = true
+        }
         
         var newIsActive = false
         var newMode: AppleFocusMode? = nil
@@ -199,13 +211,13 @@ public final class FocusService: ObservableObject {
             self.activeMode = mode
             self.activeModeName = mode.name
             self.activeModeIcon = mode.iconName
-            self.statusSubtitle = hasActiveAssertion ? "Apple Focus • On" : "Focus Mode • On"
+            self.statusSubtitle = "Active"
             self.lastKnownActiveMode = mode
         } else {
             self.activeMode = nil
-            self.activeModeName = "Focus Off"
+            self.activeModeName = "Focus"
             self.activeModeIcon = "moon.fill"
-            self.statusSubtitle = "Tap to Switch"
+            self.statusSubtitle = "Off"
         }
         
         if stateChanged {
@@ -222,7 +234,7 @@ public final class FocusService: ObservableObject {
         self.activeMode = mode
         self.activeModeName = mode.name
         self.activeModeIcon = mode.iconName
-        self.statusSubtitle = "Focus Mode • On"
+        self.statusSubtitle = "Active"
         self.lastKnownActiveMode = mode
         
         UserDefaults.standard.set(mode.id, forKey: "notchbay.last_focus_mode_id")
@@ -239,13 +251,13 @@ public final class FocusService: ObservableObject {
         self.isAppleFocusActive = false
         self.isActive = false
         self.activeMode = nil
-        self.activeModeName = "Focus Off"
+        self.activeModeName = "Focus"
         self.activeModeIcon = "moon.fill"
-        self.statusSubtitle = "Tap to Switch"
+        self.statusSubtitle = "Off"
         
         executeSystemFocusChange(mode: lastKnownActiveMode, activate: false)
         
-        onFocusChanged?(false, "Focus Off", "Turned Off")
+        onFocusChanged?(false, "Focus", "Turned Off")
     }
     
     public func toggleAppleFocus() {
@@ -484,10 +496,37 @@ public final class FocusService: ObservableObject {
         return (false, nil)
     }
     
+    public func requestAuthorizationIfNeeded() {
+        let center = INFocusStatusCenter.default
+        if center.authorizationStatus == .notDetermined {
+            center.requestAuthorization { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.refreshFocusState()
+                }
+            }
+        }
+    }
+    
     private func checkIntentsFocusStatus() -> Bool? {
         let center = INFocusStatusCenter.default
+        if center.authorizationStatus == .notDetermined {
+            requestAuthorizationIfNeeded()
+            return nil
+        }
         guard center.authorizationStatus == .authorized else { return nil }
         return center.focusStatus.isFocused
+    }
+    
+    private func checkControlCenterFocusActive() -> Bool {
+        // macOS Sonoma/Sequoia sets "NSStatusItem Visible FocusModes" = 1 in com.apple.controlcenter when Focus is on
+        if let val = CFPreferencesCopyAppValue("NSStatusItem Visible FocusModes" as CFString, "com.apple.controlcenter" as CFString) {
+            if let num = val as? NSNumber {
+                return num.boolValue
+            } else if let b = val as? Bool {
+                return b
+            }
+        }
+        return false
     }
     
     private func matchMode(for modeId: String) -> AppleFocusMode {

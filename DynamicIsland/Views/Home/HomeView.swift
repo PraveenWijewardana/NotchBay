@@ -537,10 +537,11 @@ public struct HomeView: View {
             
             // Title & Apple Focus Status
             VStack(alignment: .leading, spacing: 1) {
-                Text(focusService.isAppleFocusActive ? focusService.activeModeName : "Focus Off")
+                Text(focusService.isAppleFocusActive ? focusService.activeModeName : "Focus")
                     .font(.system(size: 11.5, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 
                 HStack(spacing: 3) {
                     if focusService.isAppleFocusActive {
@@ -548,7 +549,7 @@ public struct HomeView: View {
                             .fill(Color(red: 0.75, green: 0.55, blue: 1.0))
                             .frame(width: 4, height: 4)
                     }
-                    Text(focusService.isAppleFocusActive ? "Apple Focus • On" : "Tap to Switch")
+                    Text(focusService.isAppleFocusActive ? "Active" : "Off")
                         .font(.system(size: 9.5, weight: focusService.isAppleFocusActive ? .bold : .medium, design: .rounded))
                         .foregroundColor(focusService.isAppleFocusActive ? Color(red: 0.85, green: 0.65, blue: 1.0) : .white.opacity(0.5))
                         .lineLimit(1)

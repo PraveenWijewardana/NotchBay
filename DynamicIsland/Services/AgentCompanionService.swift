@@ -311,4 +311,27 @@ public final class AgentCompanionService: ObservableObject {
             at: 0
         )
     }
+    
+    public var formattedDuration: String {
+        let mins = turnElapsedSeconds / 60
+        let secs = turnElapsedSeconds % 60
+        return String(format: "%d:%02d", mins, secs)
+    }
+    
+    public func focusActiveAgentApp() {
+        let running = NSWorkspace.shared.runningApplications
+        if let app = running.first(where: {
+            let id = ($0.bundleIdentifier ?? "").lowercased()
+            let name = ($0.localizedName ?? "").lowercased()
+            return id.contains("antigravity") || name.contains("antigravity") ||
+                   id.contains("cursor") || name.contains("cursor") ||
+                   id.contains("iterm") || name.contains("terminal")
+        }) {
+            if #available(macOS 14.0, *) {
+                app.activate()
+            } else {
+                app.activate(options: .activateIgnoringOtherApps)
+            }
+        }
+    }
 }
