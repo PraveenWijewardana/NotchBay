@@ -362,34 +362,74 @@ public struct NowPlayingView: View {
                                             mediaService.seek(to: ts)
                                         }
                                     } label: {
-                                        Text(line.text)
-                                            .font(.system(
-                                                size: mediaService.hasSyncedLyrics ? (isActive ? 15.5 : 13.5) : 13.5,
-                                                weight: (mediaService.hasSyncedLyrics && isActive) ? .bold : .medium,
-                                                design: .rounded
-                                            ))
-                                            .foregroundColor(
-                                                mediaService.hasSyncedLyrics
-                                                    ? (isActive ? .white : .white.opacity(0.38))
-                                                    : .white.opacity(0.9)
-                                            )
-                                            .shadow(
-                                                color: (mediaService.hasSyncedLyrics && isActive)
-                                                    ? Color(red: 1.0, green: 0.35, blue: 0.6).opacity(0.7)
-                                                    : .clear,
-                                                radius: 6
-                                            )
-                                            .scaleEffect((mediaService.hasSyncedLyrics && isActive) ? 1.02 : 1.0, anchor: .leading)
-                                            .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isActive)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .contentShape(Rectangle())
+                                        HStack(alignment: .center, spacing: 8) {
+                                            if mediaService.hasSyncedLyrics && isActive {
+                                                Capsule()
+                                                    .fill(
+                                                        LinearGradient(
+                                                            colors: [Color(red: 1.0, green: 0.35, blue: 0.6), Color(red: 0.75, green: 0.35, blue: 1.0)],
+                                                            startPoint: .top,
+                                                            endPoint: .bottom
+                                                        )
+                                                    )
+                                                    .frame(width: 3.5, height: 22)
+                                                    .shadow(color: Color(red: 1.0, green: 0.35, blue: 0.6).opacity(0.85), radius: 5)
+                                                    .transition(.scale.combined(with: .opacity))
+                                            }
+                                            
+                                            Text(line.text)
+                                                .font(.system(
+                                                    size: mediaService.hasSyncedLyrics ? (isActive ? 21.0 : 13.0) : 13.5,
+                                                    weight: (mediaService.hasSyncedLyrics && isActive) ? .heavy : .medium,
+                                                    design: .rounded
+                                                ))
+                                                .foregroundColor(
+                                                    mediaService.hasSyncedLyrics
+                                                        ? (isActive ? .white : .white.opacity(0.32))
+                                                        : .white.opacity(0.9)
+                                                )
+                                                .shadow(
+                                                    color: (mediaService.hasSyncedLyrics && isActive)
+                                                        ? Color(red: 1.0, green: 0.32, blue: 0.6).opacity(0.75)
+                                                        : .clear,
+                                                    radius: 8
+                                                )
+                                                .shadow(
+                                                    color: (mediaService.hasSyncedLyrics && isActive)
+                                                        ? Color.white.opacity(0.4)
+                                                        : .clear,
+                                                    radius: 2
+                                                )
+                                                .scaleEffect((mediaService.hasSyncedLyrics && isActive) ? 1.02 : 1.0, anchor: .leading)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                        }
+                                        .padding(.vertical, (mediaService.hasSyncedLyrics && isActive) ? 5 : 2)
+                                        .padding(.horizontal, (mediaService.hasSyncedLyrics && isActive) ? 8 : 4)
+                                        .background(
+                                            (mediaService.hasSyncedLyrics && isActive)
+                                                ? RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                                    .fill(
+                                                        LinearGradient(
+                                                            colors: [
+                                                                Color.white.opacity(0.08),
+                                                                Color(red: 1.0, green: 0.3, blue: 0.6).opacity(0.07),
+                                                                Color.clear
+                                                            ],
+                                                            startPoint: .leading,
+                                                            endPoint: .trailing
+                                                        )
+                                                    )
+                                                : nil
+                                        )
+                                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: isActive)
+                                        .contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
                                     .id(index)
                                 }
                             }
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 16)
                         }
                         .onChange(of: mediaService.activeLyricIndex) { newIndex in
                             if let idx = newIndex, mediaService.hasSyncedLyrics {
