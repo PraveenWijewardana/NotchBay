@@ -15,8 +15,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.applicationIconImage = iconImage
         }
 
-        // Set activation policy as accessory app so it doesn't clutter Dock unless desired
-        NSApp.setActivationPolicy(.accessory)
+        // Set activation policy according to user settings (accessory or dock)
+        AppSettings.shared.updateActivationPolicy()
         
         // Initialize Notch Window Controller
         let windowCtrl = NotchWindowController.shared
@@ -53,11 +53,16 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(viewsItem)
         
         menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Settings...", action: #selector(openSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem(title: "Center / Reset Position", action: #selector(recenterIsland), keyEquivalent: "r"))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit NotchBay", action: #selector(quitApp), keyEquivalent: "q"))
         
         statusItem?.menu = menu
+    }
+    
+    @objc private func openSettings() {
+        SettingsWindowController.shared.showWindow()
     }
     
     @objc private func toggleIsland() {

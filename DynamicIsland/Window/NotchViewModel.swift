@@ -307,11 +307,14 @@ public final class NotchViewModel: ObservableObject {
         self.isHovering = hovering
         hoverTask?.cancel()
         
+        guard AppSettings.shared.hoverToExpand else { return }
+        
         if hovering {
             // Expand to dashboard if in compact OR hud mode (e.g. while downloading files)!
             if state == .compact || state == .hud {
                 hoverTask = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    let delayNanos = UInt64(max(0.05, AppSettings.shared.hoverDelay) * 1_000_000_000)
+                    try? await Task.sleep(nanoseconds: delayNanos)
                     if !Task.isCancelled && self.isHovering && (self.state == .compact || self.state == .hud) {
                         self.setExpanded(true)
                     }

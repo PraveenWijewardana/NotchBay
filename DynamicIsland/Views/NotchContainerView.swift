@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct NotchContainerView: View {
     @ObservedObject public var viewModel: NotchViewModel
+    @ObservedObject private var settings: AppSettings = AppSettings.shared
     
     public init(viewModel: NotchViewModel) {
         self.viewModel = viewModel
@@ -10,13 +11,28 @@ public struct NotchContainerView: View {
     private var bottomRadius: CGFloat {
         switch viewModel.state {
         case .expanded:
-            return 26
+            return CGFloat(settings.notchCornerRadius)
         case .call:
-            return 24
-        case .hud:
-            return 18
-        case .compact:
-            return 18
+            return CGFloat(max(18, settings.notchCornerRadius - 2))
+        case .hud, .compact:
+            return CGFloat(max(14, settings.notchCornerRadius - 8))
+        }
+    }
+    
+    private var topRadius: CGFloat {
+        settings.floatingIslandMode ? bottomRadius : 0
+    }
+    
+    private var containerBackground: Color {
+        switch settings.glassMaterial {
+        case .trueBlack:
+            return Color.black
+        case .frostedDark:
+            return Color(red: 0.06, green: 0.065, blue: 0.08).opacity(0.95)
+        case .neonCyber:
+            return Color(red: 0.04, green: 0.045, blue: 0.07)
+        case .ultraThin:
+            return Color.black.opacity(0.85)
         }
     }
     
@@ -24,19 +40,19 @@ public struct NotchContainerView: View {
         ZStack(alignment: .top) {
             // Background: OLED true black anchored to top bezel with smooth continuous curved bottom corners
             UnevenRoundedRectangle(
-                topLeadingRadius: 0,
+                topLeadingRadius: topRadius,
                 bottomLeadingRadius: bottomRadius,
                 bottomTrailingRadius: bottomRadius,
-                topTrailingRadius: 0,
+                topTrailingRadius: topRadius,
                 style: .continuous
             )
-            .fill(Color.black)
+            .fill(containerBackground)
             .overlay(
                 UnevenRoundedRectangle(
-                    topLeadingRadius: 0,
+                    topLeadingRadius: topRadius,
                     bottomLeadingRadius: bottomRadius,
                     bottomTrailingRadius: bottomRadius,
-                    topTrailingRadius: 0,
+                    topTrailingRadius: topRadius,
                     style: .continuous
                 )
                 .strokeBorder(
@@ -70,10 +86,10 @@ public struct NotchContainerView: View {
         }
         .clipShape(
             UnevenRoundedRectangle(
-                topLeadingRadius: 0,
+                topLeadingRadius: topRadius,
                 bottomLeadingRadius: bottomRadius,
                 bottomTrailingRadius: bottomRadius,
-                topTrailingRadius: 0,
+                topTrailingRadius: topRadius,
                 style: .continuous
             )
         )
@@ -152,8 +168,11 @@ public struct NotchContainerView: View {
         }
         
         if viewModel.isHovering && viewModel.state == .compact {
+            let accent = settings.accentColor.color
             return LinearGradient(
-                colors: [Color.cyan.opacity(0.4), Color.purple.opacity(0.4), Color.cyan.opacity(0.4)],
+                colors: settings.enableNeonGlow
+                    ? [accent.opacity(0.55 * settings.glowIntensity), Color.purple.opacity(0.4), accent.opacity(0.55 * settings.glowIntensity)]
+                    : [Color.white.opacity(0.2), Color.white.opacity(0.12)],
                 startPoint: .leading,
                 endPoint: .trailing
             )
@@ -194,7 +213,7 @@ public struct NotchContainerView: View {
             }
         }
         if viewModel.isHovering && viewModel.state == .compact {
-            return Color.cyan.opacity(0.35)
+            return settings.enableNeonGlow ? settings.accentColor.color.opacity(0.4 * settings.glowIntensity) : Color.white.opacity(0.15)
         }
         return Color.black.opacity(0.6)
     }

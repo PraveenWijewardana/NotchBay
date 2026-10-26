@@ -48,6 +48,9 @@
 		B10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift */; };
 		B10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift */; };
 		B10000250000000000000025 /* DynamicIsland/Services/FocusService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000250000000000000025 /* DynamicIsland/Services/FocusService.swift */; };
+		B10000300000000000000030 /* DynamicIsland/Models/AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000300000000000000030 /* DynamicIsland/Models/AppSettings.swift */; };
+		B10000310000000000000031 /* DynamicIsland/Window/SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000310000000000000031 /* DynamicIsland/Window/SettingsWindowController.swift */; };
+		B10000320000000000000032 /* DynamicIsland/Views/Settings/SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000320000000000000032 /* DynamicIsland/Views/Settings/SettingsView.swift */; };
 		B10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */; };
 		B10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */; };
 		B4C4327303CE434EAB345253 /* DynamicIsland/Models/NetworkStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802FE31A1BF4402BAE75C37C /* DynamicIsland/Models/NetworkStats.swift */; };
@@ -100,6 +103,9 @@
 		A10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/ClipboardService.swift; sourceTree = "<group>"; };
 		A10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/FileTransferService.swift; sourceTree = "<group>"; };
 		A10000250000000000000025 /* DynamicIsland/Services/FocusService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Services/FocusService.swift; sourceTree = "<group>"; };
+		A10000300000000000000030 /* DynamicIsland/Models/AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Models/AppSettings.swift; sourceTree = "<group>"; };
+		A10000310000000000000031 /* DynamicIsland/Window/SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Window/SettingsWindowController.swift; sourceTree = "<group>"; };
+		A10000320000000000000032 /* DynamicIsland/Views/Settings/SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Settings/SettingsView.swift; sourceTree = "<group>"; };
 		A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = DynamicIsland/Resources/Assets.xcassets; sourceTree = "<group>"; };
 		A10000160000000000000016 /* DynamicIsland/Resources/AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = DynamicIsland/Resources/AppIcon.icns; sourceTree = "<group>"; };
 		ABC3483D808345EDB51EBDBE /* DynamicIsland/Views/Components/SparklineChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIsland/Views/Components/SparklineChart.swift; sourceTree = "<group>"; };
@@ -188,6 +194,9 @@
 				A10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift */,
 				A10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift */,
 				A10000250000000000000025 /* DynamicIsland/Services/FocusService.swift */,
+				A10000300000000000000030 /* DynamicIsland/Models/AppSettings.swift */,
+				A10000310000000000000031 /* DynamicIsland/Window/SettingsWindowController.swift */,
+				A10000320000000000000032 /* DynamicIsland/Views/Settings/SettingsView.swift */,
 				CF0FF6B1B56A4939A03E202F /* DynamicIsland/Resources/Info.plist */,
 				2F9A925691A941BE830067FF /* DynamicIsland/Resources/DynamicIsland.entitlements */,
 				A10000150000000000000015 /* DynamicIsland/Resources/Assets.xcassets */,
@@ -310,6 +319,9 @@
 				B10000230000000000000023 /* DynamicIsland/Services/ClipboardService.swift in Sources */,
 				B10000240000000000000024 /* DynamicIsland/Services/FileTransferService.swift in Sources */,
 				B10000250000000000000025 /* DynamicIsland/Services/FocusService.swift in Sources */,
+				B10000300000000000000030 /* DynamicIsland/Models/AppSettings.swift in Sources */,
+				B10000310000000000000031 /* DynamicIsland/Window/SettingsWindowController.swift in Sources */,
+				B10000320000000000000032 /* DynamicIsland/Views/Settings/SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -102,14 +102,27 @@ public struct ExpandedIslandView: View {
                     .buttonStyle(.plain)
                     .help("Lock Screen (Instant)")
                     
-                    // Collapse / Settings Gear Button
+                    // Settings Window Button (Opens independent macOS window)
+                    Button {
+                        SettingsWindowController.shared.showWindow()
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 22, height: 22)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open Settings Window (⌘,)")
+                    
+                    // Collapse to Notch Button
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
                             viewModel.setExpanded(false)
                         }
                     } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 11.5, weight: .semibold))
+                        Image(systemName: "chevron.up")
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.white.opacity(0.85))
                             .frame(width: 22, height: 22)
                             .contentShape(Rectangle())

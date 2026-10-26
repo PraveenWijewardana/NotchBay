@@ -5,10 +5,12 @@ public struct CompactIslandView: View {
     @ObservedObject private var systemService: SystemMonitorService
     @ObservedObject private var networkService: NetworkMonitorService
     @ObservedObject private var mediaService: MediaControllerService
+    @ObservedObject private var settings: AppSettings = AppSettings.shared
     
-    // Symmetrical ear content width with generous breathing room (fits full speeds and single-line status)
+    // Symmetrical ear content width with user settings
     private var earWidth: CGFloat {
-        viewModel.caffeineService.isActive ? 86.0 : 74.0
+        let extraCaffeine: CGFloat = (viewModel.caffeineService.isActive && settings.showCaffeineInCompact) ? 12.0 : 0.0
+        return CGFloat(settings.compactEarWidth) + extraCaffeine
     }
     
     public init(viewModel: NotchViewModel) {
@@ -129,7 +131,7 @@ public struct CompactIslandView: View {
                 }
                 .frame(height: 12)
             } else {
-                if viewModel.caffeineService.isActive {
+                if settings.showCaffeineInCompact && viewModel.caffeineService.isActive {
                     HStack(spacing: 2.5) {
                         Image(systemName: "cup.and.saucer.fill")
                             .font(.system(size: 8, weight: .bold))
@@ -145,17 +147,64 @@ public struct CompactIslandView: View {
                     .fixedSize(horizontal: true, vertical: false)
                 }
                 
-                Image(systemName: "cpu")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(cpuColor)
-                    .shadow(color: cpuColor.opacity(viewModel.isHovering ? 0.7 : 0.25), radius: 2.5)
-                
-                Text(String(format: "%.0f%%", systemService.cpuMetrics.usagePercentage))
-                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(.white)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
+                switch settings.leftEarContent {
+                case .cpuLoad, .musicVisualizer:
+                    Image(systemName: "cpu")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(cpuColor)
+                        .shadow(color: cpuColor.opacity(viewModel.isHovering ? 0.7 : 0.25), radius: 2.5)
+                    
+                    Text(String(format: "%.0f%%", systemService.cpuMetrics.usagePercentage))
+                        .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                case .memoryUsage:
+                    Image(systemName: "memorychip")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(settings.accentColor.color)
+                        .shadow(color: settings.accentColor.color.opacity(0.5), radius: 2.5)
+                    
+                    Text(String(format: "%.0f%%", systemService.memoryMetrics.usageFraction * 100))
+                        .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                case .clock:
+                    Image(systemName: "clock")
+                        .font(.system(size: 8.5, weight: .bold))
+                        .foregroundColor(settings.accentColor.color)
+                    
+                    Text(viewModel.currentDate.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                case .weatherTemp:
+                    Image(systemName: viewModel.weatherService.weather.condition.iconName)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.yellow)
+                    
+                    Text("\(viewModel.weatherService.weather.temperature)°")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                case .batteryPercent:
+                    Image(systemName: systemService.powerMetrics.isCharging ? "battery.100.bolt" : "battery.75")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(systemService.powerMetrics.isCharging ? .green : (systemService.powerMetrics.batteryLevel < 20 ? .red : .white))
+                    
+                    Text("\(systemService.powerMetrics.batteryLevel)%")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                case .hidden:
+                    EmptyView()
+                }
             }
         }
         .scaleEffect(viewModel.isHovering ? 1.05 : 1.0)
@@ -286,11 +335,92 @@ public struct CompactIslandView: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false)
             } else {
-                networkSpeedView
+                switch settings.rightEarContent {
+                case .networkSpeed:
+                    networkSpeedView
+                case .downloadOnly:
+                    downloadOnlyView
+                case .uploadOnly:
+                    uploadOnlyView
+                case .activeAgents:
+                    HStack(spacing: 3) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(settings.accentColor.color)
+                        Text("AI Idle")
+                            .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.75))
+                    }
+                case .timers:
+                    HStack(spacing: 3) {
+                        Image(systemName: "timer")
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundColor(.yellow)
+                        Text("00:00")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                case .batteryPercent:
+                    HStack(spacing: 3) {
+                        Image(systemName: systemService.powerMetrics.isCharging ? "battery.100.bolt" : "battery.75")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(systemService.powerMetrics.isCharging ? .green : .white)
+                        Text("\(systemService.powerMetrics.batteryLevel)%")
+                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                case .hidden:
+                    EmptyView()
+                }
             }
         }
         .scaleEffect(viewModel.isHovering ? 1.05 : 1.0)
         .animation(.spring(response: 0.25, dampingFraction: 0.7), value: viewModel.isHovering)
+    }
+    
+    @ViewBuilder
+    private var downloadOnlyView: some View {
+        let down = viewModel.networkService.metrics.currentDownSpeed
+        let (val, unit) = formatSpeedParts(down)
+        HStack(spacing: 3) {
+            Image(systemName: "arrow.down")
+                .font(.system(size: 8.5, weight: .bold))
+                .foregroundColor(down >= 1024 ? Color.cyan : Color.white.opacity(0.35))
+            HStack(alignment: .firstTextBaseline, spacing: 1.5) {
+                Text(val)
+                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundColor(down >= 1024 ? .white : Color.white.opacity(0.45))
+                Text(unit)
+                    .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                    .foregroundColor(down >= 1024 ? Color.cyan.opacity(0.9) : Color.white.opacity(0.35))
+            }
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+        }
+    }
+    
+    @ViewBuilder
+    private var uploadOnlyView: some View {
+        let up = viewModel.networkService.metrics.currentUpSpeed
+        let (val, unit) = formatSpeedParts(up)
+        HStack(spacing: 3) {
+            Image(systemName: "arrow.up")
+                .font(.system(size: 8.5, weight: .bold))
+                .foregroundColor(up >= 1024 ? Color.green : Color.white.opacity(0.35))
+            HStack(alignment: .firstTextBaseline, spacing: 1.5) {
+                Text(val)
+                    .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundColor(up >= 1024 ? .white : Color.white.opacity(0.45))
+                Text(unit)
+                    .font(.system(size: 7.5, weight: .bold, design: .rounded))
+                    .foregroundColor(up >= 1024 ? Color.green.opacity(0.9) : Color.white.opacity(0.35))
+            }
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+        }
     }
     
     // MARK: - Enhanced Network Speed View

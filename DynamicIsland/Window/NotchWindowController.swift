@@ -43,6 +43,7 @@ public final class NotchWindowController: NSObject, ObservableObject {
         hosting.onDragEntered = { [weak self] in
             Task { @MainActor in
                 guard let self = self else { return }
+                guard AppSettings.shared.autoOpenShelfOnDrag else { return }
                 self.viewModel.selectedPageIndex = 4
                 self.viewModel.setExpanded(true)
                 self.viewModel.shelfService.isTargeted = true
@@ -68,8 +69,10 @@ public final class NotchWindowController: NSObject, ObservableObject {
         // Detects clicks outside the island when expanded and tucks it UP into the notch
         globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
             guard let self = self, self.viewModel.state == .expanded else { return }
-            // Do NOT collapse if user is on Drop Shelf (page 4), so the user can select and drag files freely!
-            if self.viewModel.selectedPageIndex == 4 { return }
+            guard AppSettings.shared.autoCollapseOnClickOutside else { return }
+            
+            // Respect keepOpenOnDropShelf setting
+            if AppSettings.shared.keepOpenOnDropShelf && self.viewModel.selectedPageIndex == 4 { return }
             
             let mouseLocation = NSEvent.mouseLocation
             if let panel = self.panel, !panel.frame.contains(mouseLocation) {
@@ -108,6 +111,16 @@ public final class NotchWindowController: NSObject, ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.reposition()
+            }
+            .store(in: &cancellables)
+            
+        // Observe AppSettings changes to automatically reposition / re-animate
+        AppSettings.shared.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.reposition()
+                }
             }
             .store(in: &cancellables)
     }
@@ -153,8 +166,8 @@ public final class NotchWindowController: NSObject, ObservableObject {
         
         switch state {
         case .expanded:
-            width = 570
-            height = 270
+            width = CGFloat(AppSettings.shared.islandWidthExpanded)
+            height = CGFloat(AppSettings.shared.islandHeightExpanded)
         case .call:
             width = max(460.0, physicalNotchWidth + 240.0)
             height = notchHeight + 62.0
@@ -163,15 +176,23 @@ public final class NotchWindowController: NSObject, ObservableObject {
             width = max(440.0, physicalNotchWidth + (earWidth * 2.0) + 16.0)
             height = max(notchHeight + 8.0, 44.0)
         case .compact:
-            // Symmetrical compact ears: dynamic content (74pt or 86pt with active caffeine) + 10pt outer padding
-            let earContent: CGFloat = viewModel.caffeineService.isActive ? 86.0 : 74.0
+            // Symmetrical compact ears from user settings
+            let extraCaffeine: CGFloat = (viewModel.caffeineService.isActive && AppSettings.shared.showCaffeineInCompact) ? 12.0 : 0.0
+            let earContent: CGFloat = CGFloat(AppSettings.shared.compactEarWidth) + extraCaffeine
             let earTotal: CGFloat = earContent + 10.0
             width = physicalNotchWidth + (earTotal * 2.0)
             height = max(notchHeight + 4.0, 36.0)
         }
         
         let x = notchCenterX - (width / 2.0)
-        let y = screenRect.maxY - height
+        var y = screenRect.maxY - height
+        
+        // If user enabled Floating Dynamic Island mode (e.g. for external monitors or non-notch Macs)
+        if AppSettings.shared.floatingIslandMode {
+            y -= CGFloat(AppSettings.shared.floatingTopMargin)
+        }
+        
+        return NSRect(x: round(x), y: round(y), width: round(width), height: round(height))
         
         return NSRect(x: round(x), y: round(y), width: round(width), height: round(height))
     }
