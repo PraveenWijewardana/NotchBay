@@ -117,6 +117,51 @@ public struct AgentActivityItem: Identifiable, Sendable {
     }
 }
 
+// MARK: - AI Agent Live Quota Bucket (CodeNotch Architecture)
+public struct QuotaBucket: Identifiable, Equatable, Sendable {
+    public let id: String
+    public let modelGroup: String
+    public let label: String
+    public let usedFraction: Double
+    public let remainingFraction: Double
+    public let resetsAt: Date?
+    public let duration: TimeInterval
+    
+    public init(
+        id: String,
+        modelGroup: String,
+        label: String,
+        usedFraction: Double,
+        remainingFraction: Double,
+        resetsAt: Date?,
+        duration: TimeInterval = 5 * 3600
+    ) {
+        self.id = id
+        self.modelGroup = modelGroup
+        self.label = label
+        self.usedFraction = usedFraction
+        self.remainingFraction = remainingFraction
+        self.resetsAt = resetsAt
+        self.duration = duration
+    }
+    
+    public var formattedResetCountdown: String {
+        guard let resetsAt = resetsAt else { return "Never" }
+        let diff = resetsAt.timeIntervalSince(Date())
+        guard diff > 0 else { return "Resetting..." }
+        let days = Int(diff / 86400)
+        let hours = Int((diff.truncatingRemainder(dividingBy: 86400)) / 3600)
+        let minutes = Int((diff.truncatingRemainder(dividingBy: 3600)) / 60)
+        if days > 0 {
+            return "\(days)d \(hours)h"
+        } else if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        } else {
+            return "\(max(1, minutes))m"
+        }
+    }
+}
+
 // MARK: - AI Agent Usage Metrics (Inspired by CodeNotch)
 public struct AgentUsageMetrics: Equatable, Sendable {
     public var requestsToday: Int
@@ -126,13 +171,31 @@ public struct AgentUsageMetrics: Equatable, Sendable {
     public var currentTurnDuration: TimeInterval
     public var dailyTarget: Int // Soft daily benchmark for gauge ring (e.g. 500)
     
+    // Live Quota metrics from Language Server (CodeNotch Implementation)
+    public var quotaBuckets: [QuotaBucket]
+    public var fiveHourRemainingFraction: Double?
+    public var fiveHourUsedFraction: Double?
+    public var weeklyRemainingFraction: Double?
+    public var weeklyUsedFraction: Double?
+    public var fiveHourResetDate: Date?
+    public var weeklyResetDate: Date?
+    public var planName: String
+    
     public init(
         requestsToday: Int = 0,
         totalRequests: Int = 0,
         lastRequestDate: Date? = nil,
         activeSessionsCount: Int = 0,
         currentTurnDuration: TimeInterval = 0,
-        dailyTarget: Int = 500
+        dailyTarget: Int = 500,
+        quotaBuckets: [QuotaBucket] = [],
+        fiveHourRemainingFraction: Double? = nil,
+        fiveHourUsedFraction: Double? = nil,
+        weeklyRemainingFraction: Double? = nil,
+        weeklyUsedFraction: Double? = nil,
+        fiveHourResetDate: Date? = nil,
+        weeklyResetDate: Date? = nil,
+        planName: String = "Gemini 2.5 Pro"
     ) {
         self.requestsToday = requestsToday
         self.totalRequests = totalRequests
@@ -140,11 +203,51 @@ public struct AgentUsageMetrics: Equatable, Sendable {
         self.activeSessionsCount = activeSessionsCount
         self.currentTurnDuration = currentTurnDuration
         self.dailyTarget = dailyTarget
+        self.quotaBuckets = quotaBuckets
+        self.fiveHourRemainingFraction = fiveHourRemainingFraction
+        self.fiveHourUsedFraction = fiveHourUsedFraction
+        self.weeklyRemainingFraction = weeklyRemainingFraction
+        self.weeklyUsedFraction = weeklyUsedFraction
+        self.fiveHourResetDate = fiveHourResetDate
+        self.weeklyResetDate = weeklyResetDate
+        self.planName = planName
+    }
+    
+    public var isLiveQuotaConnected: Bool {
+        !quotaBuckets.isEmpty
+    }
+    
+    public var primaryGaugeFraction: Double {
+        if let used = fiveHourUsedFraction {
+            return min(max(used, 0.0), 1.0)
+        } else if let used = weeklyUsedFraction {
+            return min(max(used, 0.0), 1.0)
+        }
+        guard dailyTarget > 0 else { return 0.0 }
+        return min(max(Double(requestsToday) / Double(dailyTarget), 0.0), 1.0)
+    }
+    
+    public var primaryRemainingPercent: Int {
+        if let rem = fiveHourRemainingFraction {
+            return Int(round(rem * 100))
+        } else if let rem = weeklyRemainingFraction {
+            return Int(round(rem * 100))
+        }
+        return 100
+    }
+    
+    public var primaryResetCountdown: String {
+        if let bucket = quotaBuckets.first(where: { $0.id.contains("hourly") || $0.id.contains("5h") }) {
+            return bucket.formattedResetCountdown
+        }
+        if let bucket = quotaBuckets.first(where: { $0.id.contains("weekly") }) {
+            return bucket.formattedResetCountdown
+        }
+        return formattedLastActive
     }
     
     public var gaugeFraction: Double {
-        guard dailyTarget > 0 else { return 0.0 }
-        return min(max(Double(requestsToday) / Double(dailyTarget), 0.0), 1.0)
+        primaryGaugeFraction
     }
     
     public var formattedLastActive: String {

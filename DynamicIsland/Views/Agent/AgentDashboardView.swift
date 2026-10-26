@@ -334,13 +334,27 @@ public struct AgentDashboardView: View {
     
     // MARK: - Column 2: AI Usage Gauge Card (CodeNotch Implementation)
     private var aiUsageGaugeCard: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let metrics = agentService.usageMetrics
+        let isLive = metrics.isLiveQuotaConnected
+        let remainingPercent = metrics.primaryRemainingPercent
+        
+        let ringColor: Color = {
+            if remainingPercent > 50 {
+                return Color.cyan
+            } else if remainingPercent > 20 {
+                return Color.orange
+            } else {
+                return Color.red
+            }
+        }()
+        
+        return VStack(alignment: .leading, spacing: 4) {
             // Header
             HStack {
                 HStack(spacing: 4) {
                     Image(systemName: "gauge.with.needle.fill")
                         .font(.system(size: 9.5))
-                        .foregroundColor(.cyan)
+                        .foregroundColor(isLive ? ringColor : .cyan)
                     Text("AI USAGE")
                         .font(.system(size: 8, weight: .bold, design: .rounded))
                         .foregroundColor(.secondary)
@@ -348,9 +362,15 @@ public struct AgentDashboardView: View {
                 
                 Spacer()
                 
-                Text(agentService.usageMetrics.formattedLastActive)
-                    .font(.system(size: 7.5, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.45))
+                if isLive {
+                    Text(metrics.primaryResetCountdown)
+                        .font(.system(size: 7.5, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.55))
+                } else {
+                    Text(metrics.formattedLastActive)
+                        .font(.system(size: 7.5, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.45))
+                }
             }
             
             // Circular Progress Gauge Ring
@@ -361,45 +381,77 @@ public struct AgentDashboardView: View {
                         .frame(width: 44, height: 44)
                     
                     Circle()
-                        .trim(from: 0.0, to: CGFloat(max(0.04, min(1.0, agentService.usageMetrics.gaugeFraction))))
+                        .trim(from: 0.0, to: CGFloat(max(0.04, min(1.0, isLive ? (Double(remainingPercent) / 100.0) : metrics.gaugeFraction))))
                         .stroke(
-                            LinearGradient(
-                                colors: [.cyan, Color(red: 0.7, green: 0.4, blue: 1.0)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
+                            isLive
+                                ? LinearGradient(colors: [ringColor, ringColor.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                : LinearGradient(colors: [.cyan, Color(red: 0.7, green: 0.4, blue: 1.0)], startPoint: .topLeading, endPoint: .bottomTrailing),
                             style: StrokeStyle(lineWidth: 4, lineCap: .round)
                         )
                         .rotationEffect(.degrees(-90))
                         .frame(width: 44, height: 44)
                     
                     VStack(spacing: 0) {
-                        Text("\(agentService.usageMetrics.requestsToday)")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                        Text("today")
-                            .font(.system(size: 7, weight: .semibold, design: .rounded))
-                            .foregroundColor(.secondary)
+                        if isLive {
+                            Text("\(remainingPercent)%")
+                                .font(.system(size: 10.5, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            Text("left")
+                                .font(.system(size: 7, weight: .semibold, design: .rounded))
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("\(metrics.requestsToday)")
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .lineLimit(1)
+                            Text("today")
+                                .font(.system(size: 7, weight: .semibold, design: .rounded))
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 .padding(.vertical, 2)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Requests Today")
-                        .font(.system(size: 8.5, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                    
-                    Text("\(agentService.usageMetrics.requestsToday) model turns")
-                        .font(.system(size: 8, weight: .medium, design: .rounded))
-                        .foregroundColor(.cyan)
-                        .lineLimit(1)
-                    
-                    Text("\(agentService.usageMetrics.activeSessionsCount) active sessions")
-                        .font(.system(size: 7.5, weight: .medium, design: .rounded))
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
+                    if isLive {
+                        Text("5-Hour Quota")
+                            .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        Text("\(metrics.requestsToday) turns today")
+                            .font(.system(size: 8, weight: .medium, design: .rounded))
+                            .foregroundColor(.cyan)
+                            .lineLimit(1)
+                        
+                        if let weekly = metrics.weeklyRemainingFraction {
+                            Text("Weekly: \(Int(round(weekly * 100)))% left")
+                                .font(.system(size: 7.5, weight: .medium, design: .rounded))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        } else {
+                            Text("\(metrics.activeSessionsCount) sessions")
+                                .font(.system(size: 7.5, weight: .medium, design: .rounded))
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        Text("Requests Today")
+                            .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        
+                        Text("\(metrics.requestsToday) model turns")
+                            .font(.system(size: 8, weight: .medium, design: .rounded))
+                            .foregroundColor(.cyan)
+                            .lineLimit(1)
+                        
+                        Text("\(metrics.activeSessionsCount) active sessions")
+                            .font(.system(size: 7.5, weight: .medium, design: .rounded))
+                            .foregroundColor(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
             
@@ -412,19 +464,26 @@ public struct AgentDashboardView: View {
                         .font(.system(size: 8, weight: .medium))
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("Gemini 2.5 Pro")
+                    Text(metrics.planName)
                         .font(.system(size: 8, weight: .bold, design: .rounded))
                         .foregroundColor(.white.opacity(0.85))
+                        .lineLimit(1)
                 }
                 
                 HStack {
-                    Text("Total Trajectories")
+                    Text(isLive ? "Weekly Reset" : "Total Trajectories")
                         .font(.system(size: 8, weight: .medium))
                         .foregroundColor(.secondary)
                     Spacer()
-                    Text("\(agentService.usageMetrics.totalRequests)")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.85))
+                    if isLive, let weeklyBucket = metrics.quotaBuckets.first(where: { $0.id.contains("weekly") }) {
+                        Text(weeklyBucket.formattedResetCountdown)
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.85))
+                    } else {
+                        Text("\(metrics.totalRequests)")
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.85))
+                    }
                 }
             }
             .padding(4.5)

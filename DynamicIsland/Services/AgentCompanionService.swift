@@ -209,6 +209,7 @@ public final class AgentCompanionService: ObservableObject {
     }
     
     public func setWorking(agent: CodeAgentType, status: AgentExecutionStatus, message: String) {
+        let stateChanged = self.status != status || self.currentMessage != message || self.selectedAgent != agent
         self.selectedAgent = agent
         self.status = status
         self.currentMessage = message
@@ -219,14 +220,16 @@ public final class AgentCompanionService: ObservableObject {
             startTurnTimer()
         }
         
-        activityLog.insert(
-            AgentActivityItem(agent: agent, status: status, message: message),
-            at: 0
-        )
-        if activityLog.count > 30 { activityLog.removeLast() }
-        
-        // Audio feedback chime for agent action
-        NSSound(named: "Tink")?.play()
+        if stateChanged {
+            activityLog.insert(
+                AgentActivityItem(agent: agent, status: status, message: message),
+                at: 0
+            )
+            if activityLog.count > 30 { activityLog.removeLast() }
+            
+            // Audio feedback chime on state transition
+            NSSound(named: "Tink")?.play()
+        }
     }
     
     public func requestPermission(agent: CodeAgentType, actionOrTool: String, detail: String = "") {
