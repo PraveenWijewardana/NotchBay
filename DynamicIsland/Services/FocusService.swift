@@ -383,7 +383,7 @@ public final class FocusService: ObservableObject {
         }
     }
     
-    private func getInstalledShortcuts() -> [String] {
+    private nonisolated func getInstalledShortcuts() -> [String] {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
         task.arguments = ["list"]
@@ -403,7 +403,7 @@ public final class FocusService: ObservableObject {
         return []
     }
     
-    private func findShortcut(matching mode: AppleFocusMode, activate: Bool, available: [String]) -> String? {
+    private nonisolated func findShortcut(matching mode: AppleFocusMode, activate: Bool, available: [String]) -> String? {
         let modeName = mode.name.lowercased()
         
         let candidates: [String] = activate ? [
@@ -448,7 +448,7 @@ public final class FocusService: ObservableObject {
     }
     
     @discardableResult
-    private func runShortcut(named shortcut: String) -> Bool {
+    private nonisolated func runShortcut(named shortcut: String) -> Bool {
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/shortcuts")
         task.arguments = ["run", shortcut]
@@ -464,7 +464,7 @@ public final class FocusService: ObservableObject {
     }
     
     @discardableResult
-    private func triggerControlCenterFocus() -> Bool {
+    private nonisolated func triggerControlCenterFocus() -> Bool {
         let script = """
         tell application "System Events"
             tell process "ControlCenter"

@@ -126,14 +126,33 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
         return ep
     }
     
-    /// Sends RPC POST to /exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary
-    func fetchQuota(force: Bool = false) async -> (buckets: [QuotaBucket], plan: String)? {
+    private func getCachedQuota(force: Bool) -> (buckets: [QuotaBucket], plan: String)? {
         lock.lock()
+        defer { lock.unlock() }
         if !force, let cached = cachedResult, Date().timeIntervalSince(lastResultTime) < 45 {
-            lock.unlock()
             return cached
         }
-        lock.unlock()
+        return nil
+    }
+    
+    private func setCachedQuota(_ result: (buckets: [QuotaBucket], plan: String)) {
+        lock.lock()
+        defer { lock.unlock() }
+        self.cachedResult = result
+        self.lastResultTime = Date()
+    }
+    
+    private func clearCachedEndpoint() {
+        lock.lock()
+        defer { lock.unlock() }
+        cachedEndpoint = nil
+    }
+    
+    /// Sends RPC POST to /exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary
+    func fetchQuota(force: Bool = false) async -> (buckets: [QuotaBucket], plan: String)? {
+        if let cached = getCachedQuota(force: force) {
+            return cached
+        }
         
         guard let endpoint = discoverEndpoint() else { return nil }
         let path = "/exa.language_server_pb.LanguageServerService/RetrieveUserQuotaSummary"
@@ -156,18 +175,13 @@ final class AntigravityLanguageServerBridge: @unchecked Sendable {
                 }
                 
                 if let parsed = parseQuotaResponse(data: data) {
-                    lock.lock()
-                    self.cachedResult = parsed
-                    self.lastResultTime = Date()
-                    lock.unlock()
+                    setCachedQuota(parsed)
                     return parsed
                 }
             }
         }
         
-        lock.lock()
-        cachedEndpoint = nil
-        lock.unlock()
+        clearCachedEndpoint()
         return nil
     }
     
