@@ -1010,6 +1010,7 @@ public struct SettingsView: View {
             VStack(alignment: .leading, spacing: 10) {
                 content()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -1023,22 +1024,29 @@ public struct SettingsView: View {
     }
     
     private func toggleRow(title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
-        Toggle(isOn: isOn) {
+        HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white)
-                Text(subtitle)
-                    .font(.system(size: 11.5))
-                    .foregroundColor(.white.opacity(0.55))
+                if !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 11.5))
+                        .foregroundColor(.white.opacity(0.55))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(settings.accentColor.color)
         }
-        .toggleStyle(.switch)
-        .tint(settings.accentColor.color)
     }
     
     private func agentToggleRow(title: String, subtitle: String, icon: String, iconColor: Color, isOn: Binding<Bool>) -> some View {
-        Toggle(isOn: isOn) {
+        HStack(alignment: .center, spacing: 16) {
             HStack(spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -1053,14 +1061,21 @@ public struct SettingsView: View {
                     Text(title)
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundColor(.white)
-                    Text(subtitle)
-                        .font(.system(size: 11.5))
-                        .foregroundColor(.white.opacity(0.55))
+                    if !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.system(size: 11.5))
+                            .foregroundColor(.white.opacity(0.55))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Toggle("", isOn: isOn)
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .tint(iconColor)
         }
-        .toggleStyle(.switch)
-        .tint(iconColor)
     }
     
     private func stepperRow(title: String, value: Binding<Int>, range: ClosedRange<Int>, unit: String) -> some View {
