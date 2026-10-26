@@ -322,7 +322,6 @@ public final class CallService: ObservableObject {
             CandidateDef(
                 matches: { app in
                     let id = app.bundleIdentifier?.lowercased() ?? ""
-                    let name = app.localizedName?.lowercased() ?? ""
                     return id.contains("chrome") || id.contains("safari") || id.contains("brave") || id.contains("arc")
                 },
                 appType: .meet,
