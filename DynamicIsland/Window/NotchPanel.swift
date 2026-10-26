@@ -14,10 +14,13 @@ public final class NotchPanel: NSPanel {
         
         self.isFloatingPanel = true
         self.level = .statusBar
+        self.animationBehavior = .none
+        self.isRestorable = false
         self.collectionBehavior = [
             .canJoinAllSpaces,
             .fullScreenAuxiliary,
-            .ignoresCycle
+            .ignoresCycle,
+            .stationary
         ]
         
         self.backgroundColor = .clear

@@ -10,6 +10,7 @@ public final class NotchWindowController: NSObject, ObservableObject {
     private var panel: NotchPanel?
     private var cancellables = Set<AnyCancellable>()
     private var globalClickMonitor: Any?
+    private var localClickMonitor: Any?
     
     public override init() {
         super.init()
@@ -67,7 +68,7 @@ public final class NotchWindowController: NSObject, ObservableObject {
     
     private func setupGlobalClickMonitor() {
         // Detects clicks outside the island when expanded and tucks it UP into the notch
-        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] _ in
             guard let self = self, self.viewModel.state == .expanded else { return }
             // Do not minimize if notch is pinned / locked open
             guard !self.viewModel.isPinned else { return }
@@ -82,6 +83,21 @@ public final class NotchWindowController: NSObject, ObservableObject {
                     self.viewModel.setExpanded(false)
                 }
             }
+        }
+        
+        localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) { [weak self] event in
+            guard let self = self, self.viewModel.state == .expanded else { return event }
+            guard !self.viewModel.isPinned else { return event }
+            guard AppSettings.shared.autoCollapseOnClickOutside else { return event }
+            if AppSettings.shared.keepOpenOnDropShelf && self.viewModel.selectedPageIndex == 4 { return event }
+            
+            let mouseLocation = NSEvent.mouseLocation
+            if let panel = self.panel, !panel.frame.contains(mouseLocation) {
+                Task { @MainActor in
+                    self.viewModel.setExpanded(false)
+                }
+            }
+            return event
         }
     }
     
@@ -135,6 +151,12 @@ public final class NotchWindowController: NSObject, ObservableObject {
         let targetFrame = calculateFrame(state: state)
         if panel.frame.equalTo(targetFrame) {
             return
+        }
+        
+        // Ensure the top edge is firmly pinned to targetFrame.maxY before animating.
+        // This ensures the animation always begins from the physical notch without any downward offset.
+        if abs(panel.frame.maxY - targetFrame.maxY) > 1.0 {
+            panel.setFrameOrigin(NSPoint(x: panel.frame.origin.x, y: targetFrame.maxY - panel.frame.height))
         }
         
         let isExpanding = (state == .expanded)

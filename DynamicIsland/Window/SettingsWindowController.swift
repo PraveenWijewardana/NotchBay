@@ -48,8 +48,10 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         newWindow.titleVisibility = .visible
         newWindow.toolbarStyle = .unified
         newWindow.isReleasedWhenClosed = false
+        newWindow.isRestorable = false
         newWindow.delegate = self
         newWindow.contentViewController = hostingController
+        newWindow.setContentSize(NSSize(width: windowWidth, height: windowHeight))
         newWindow.minSize = NSSize(width: 740, height: 520)
         newWindow.level = .normal
         
@@ -60,9 +62,18 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         centerWindowOnActiveScreen(newWindow)
         newWindow.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        
+        // Re-center after SwiftUI initial layout pass to guarantee perfect center placement on 1st launch
+        DispatchQueue.main.async { [weak self, weak newWindow] in
+            guard let self = self, let win = newWindow else { return }
+            self.centerWindowOnActiveScreen(win)
+        }
     }
     
     private func centerWindowOnActiveScreen(_ win: NSWindow) {
+        let defaultWidth: CGFloat = 840
+        let defaultHeight: CGFloat = 620
+        
         let mouseLocation = NSEvent.mouseLocation
         let targetScreen = NSScreen.screens.first { NSMouseInRect(mouseLocation, $0.frame, false) }
             ?? NSScreen.screens.first { $0.safeAreaInsets.top > 0 }
@@ -75,12 +86,21 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
         }
         
         let screenVisibleFrame = screen.visibleFrame
-        let windowSize = win.frame.size
+        let currentSize = win.frame.size
+        let targetWidth = currentSize.width > 300 ? currentSize.width : defaultWidth
+        let targetHeight = currentSize.height > 300 ? currentSize.height : defaultHeight
         
-        let x = screenVisibleFrame.origin.x + (screenVisibleFrame.width - windowSize.width) / 2.0
-        let y = screenVisibleFrame.origin.y + (screenVisibleFrame.height - windowSize.height) / 2.0
+        let x = screenVisibleFrame.origin.x + (screenVisibleFrame.width - targetWidth) / 2.0
+        let y = screenVisibleFrame.origin.y + (screenVisibleFrame.height - targetHeight) / 2.0
         
-        win.setFrameOrigin(NSPoint(x: round(x), y: round(y)))
+        let targetRect = NSRect(
+            x: round(x),
+            y: round(y),
+            width: round(targetWidth),
+            height: round(targetHeight)
+        )
+        
+        win.setFrame(targetRect, display: true)
     }
     
     public func closeWindow() {
