@@ -193,7 +193,5 @@ public final class NotchWindowController: NSObject, ObservableObject {
         }
         
         return NSRect(x: round(x), y: round(y), width: round(width), height: round(height))
-        
-        return NSRect(x: round(x), y: round(y), width: round(width), height: round(height))
     }
 }
