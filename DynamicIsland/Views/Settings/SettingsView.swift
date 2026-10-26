@@ -59,16 +59,7 @@ public struct SettingsView: View {
             VStack(alignment: .leading, spacing: 6) {
                 // Header with App Identity
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(LinearGradient(colors: [settings.accentColor.color, Color.purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(width: 38, height: 38)
-                            .shadow(color: settings.accentColor.color.opacity(0.4), radius: 6)
-                        
-                        Image(systemName: "circle.circle")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.white)
-                    }
+                    appIconView(size: 40)
                     
                     VStack(alignment: .leading, spacing: 1) {
                         Text("NotchBay")
@@ -950,14 +941,7 @@ public struct SettingsView: View {
             settingsCard(title: "About NotchBay") {
                 VStack(spacing: 14) {
                     HStack(spacing: 16) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(LinearGradient(colors: [.cyan, .purple], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 54, height: 54)
-                            Image(systemName: "circle.circle")
-                                .font(.system(size: 28, weight: .bold))
-                                .foregroundColor(.white)
-                        }
+                        appIconView(size: 54)
                         
                         VStack(alignment: .leading, spacing: 3) {
                             Text("NotchBay for macOS")
@@ -1122,6 +1106,40 @@ public struct SettingsView: View {
                 .padding(.vertical, 3)
                 .background(Color.white.opacity(0.12))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+    }
+    
+    // MARK: - App Icon Helper
+    private var resolvedAppIcon: NSImage? {
+        if let icon = NSApp.applicationIconImage, icon.isValid {
+            return icon
+        }
+        if let path = Bundle.main.url(forResource: "AppIcon", withExtension: "icns"),
+           let icon = NSImage(contentsOf: path), icon.isValid {
+            return icon
+        }
+        return NSImage(named: NSImage.applicationIconName) ?? NSImage(named: "AppIcon")
+    }
+    
+    private func appIconView(size: CGFloat) -> some View {
+        Group {
+            if let icon = resolvedAppIcon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: size, height: size)
+                    .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+                    .shadow(color: .black.opacity(0.4), radius: 5, y: 2)
+            } else {
+                ZStack {
+                    RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                        .fill(LinearGradient(colors: [settings.accentColor.color, Color.purple], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: size, height: size)
+                    Image(systemName: "app.fill")
+                        .font(.system(size: size * 0.5, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
         }
     }
 }
