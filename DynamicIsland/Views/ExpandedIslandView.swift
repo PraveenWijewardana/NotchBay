@@ -91,19 +91,6 @@ public struct ExpandedIslandView: View {
                     .menuStyle(.borderlessButton)
                     .help("Caffeine: Prevent Mac Sleep")
                     
-                    // Lock Screen Button (Instant SACLockScreenImmediate)
-                    Button {
-                        lockScreen()
-                    } label: {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.85))
-                            .frame(width: 22, height: 22)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .help("Lock Screen (Instant)")
-                    
                     // Settings Window Button (Opens independent macOS window and closes notch)
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
@@ -197,29 +184,5 @@ public struct ExpandedIslandView: View {
         }
         .buttonStyle(.plain)
         .help(title)
-    }
-    
-    // MARK: - Working Native Mac Lock Screen Action
-    private func lockScreen() {
-        // Method 1: Instant native private framework call (standard macOS Lock Screen API)
-        let loginLibPath = "/System/Library/PrivateFrameworks/login.framework/Versions/Current/login"
-        if let handle = dlopen(loginLibPath, RTLD_LAZY) {
-            defer { dlclose(handle) }
-            if let sym = dlsym(handle, "SACLockScreenImmediate") {
-                typealias LockFn = @convention(c) () -> Void
-                let lock = unsafeBitCast(sym, to: LockFn.self)
-                lock()
-                return
-            }
-        }
-        
-        // Method 2: Fallback via AppleScript standard Lock Screen keystroke (Control + Command + Q)
-        let appleScript = """
-        tell application "System Events"
-            key code 12 using {control down, command down}
-        end tell
-        """
-        var err: NSDictionary?
-        NSAppleScript(source: appleScript)?.executeAndReturnError(&err)
     }
 }
