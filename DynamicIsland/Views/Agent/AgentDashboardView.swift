@@ -59,8 +59,9 @@ public struct AgentDashboardView: View {
             
             Spacer()
             
-            // Customize button: opens Settings directly to AI Code Agents tab
+            // Customize button: opens Settings directly to AI Code Agents tab and closes notch
             Button {
+                viewModel.setExpanded(false)
                 SettingsWindowController.shared.showWindow(tab: .aiAgents)
             } label: {
                 HStack(spacing: 4) {
@@ -84,20 +85,39 @@ public struct AgentDashboardView: View {
     private func agentQuotaCard(for agent: CodeAgentType, count: Int) -> some View {
         let metrics = agentService.metrics(for: agent)
         let status = agentService.status(for: agent)
-        let fiveHourPct = metrics.fiveHourRemainingPercent
-        let weeklyPct = metrics.weeklyRemainingPercent
+        let isUsageMode = (settings.quotaDisplayMode == .used)
+        
+        let fiveHourRawRemaining = metrics.fiveHourRemainingPercent
+        let weeklyRawRemaining = metrics.weeklyRemainingPercent
+        
+        let fiveHourDisplayPct = isUsageMode ? max(0, min(100, 100 - fiveHourRawRemaining)) : fiveHourRawRemaining
+        let weeklyDisplayPct = isUsageMode ? max(0, min(100, 100 - weeklyRawRemaining)) : weeklyRawRemaining
+        let limitSuffix = isUsageMode ? "used" : "left"
+        
         let hasPendingApproval = (agentService.activePermissionRequest?.agent == agent)
         
         let fiveHourColor: Color = {
-            if fiveHourPct > 50 { return agent.accentColor }
-            if fiveHourPct > 20 { return Color.orange }
-            return Color.red
+            if isUsageMode {
+                if fiveHourDisplayPct > 80 { return Color.red }
+                if fiveHourDisplayPct > 50 { return Color.orange }
+                return agent.accentColor
+            } else {
+                if fiveHourDisplayPct > 50 { return agent.accentColor }
+                if fiveHourDisplayPct > 20 { return Color.orange }
+                return Color.red
+            }
         }()
         
         let weeklyColor: Color = {
-            if weeklyPct > 50 { return Color(red: 0.75, green: 0.55, blue: 1.0) }
-            if weeklyPct > 20 { return Color.orange }
-            return Color.red
+            if isUsageMode {
+                if weeklyDisplayPct > 80 { return Color.red }
+                if weeklyDisplayPct > 50 { return Color.orange }
+                return Color(red: 0.75, green: 0.55, blue: 1.0)
+            } else {
+                if weeklyDisplayPct > 50 { return Color(red: 0.75, green: 0.55, blue: 1.0) }
+                if weeklyDisplayPct > 20 { return Color.orange }
+                return Color.red
+            }
         }()
         
         return VStack(alignment: .leading, spacing: 5) {
@@ -179,97 +199,113 @@ public struct AgentDashboardView: View {
                 .cornerRadius(4)
             }
             
-            // MARK: - 1. 5-Hour Rolling Limit Quota
-            VStack(alignment: .leading, spacing: 2.5) {
-                HStack {
-                    HStack(spacing: 3) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 7.5))
-                            .foregroundColor(fiveHourColor)
-                        Text("5-Hour Quota")
+            // MARK: - 1. 5-Hour Rolling Limit Quota (Tap to toggle Left vs Usage)
+            Button {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                    settings.quotaDisplayMode = (settings.quotaDisplayMode == .remaining ? .used : .remaining)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2.5) {
+                    HStack {
+                        HStack(spacing: 3) {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 7.5))
+                                .foregroundColor(fiveHourColor)
+                            Text(isUsageMode ? "5h Usage" : "5h Left")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                        Spacer()
+                        Text(metrics.fiveHourResetCountdown)
+                            .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.cyan)
+                    }
+                    
+                    // Progress Bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.10))
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [fiveHourColor, fiveHourColor.opacity(0.75)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
+                                .frame(width: max(4, geo.size.width * CGFloat(min(1.0, Double(fiveHourDisplayPct) / 100.0))))
+                        }
+                    }
+                    .frame(height: 4.5)
+                    
+                    HStack {
+                        Text("\(fiveHourDisplayPct)% \(limitSuffix)")
                             .font(.system(size: 8, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.85))
-                    }
-                    Spacer()
-                    Text(metrics.fiveHourResetCountdown)
-                        .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.cyan)
-                }
-                
-                // Progress Bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.white.opacity(0.10))
-                        Capsule()
-                            .fill(LinearGradient(
-                                colors: [fiveHourColor, fiveHourColor.opacity(0.75)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ))
-                            .frame(width: max(4, geo.size.width * CGFloat(min(1.0, Double(fiveHourPct) / 100.0))))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("5h rolling")
+                            .font(.system(size: 7, weight: .medium))
+                            .foregroundColor(.secondary)
                     }
                 }
-                .frame(height: 4.5)
-                
-                HStack {
-                    Text("\(fiveHourPct)% left")
-                        .font(.system(size: 8, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("5h window")
-                        .font(.system(size: 7, weight: .medium))
-                        .foregroundColor(.secondary)
-                }
+                .padding(5)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.035)))
             }
-            .padding(5)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.035)))
+            .buttonStyle(.plain)
+            .help("Click to toggle between Left Limit and Usage Limit")
             
-            // MARK: - 2. 7-Day Weekly Limit Quota
-            VStack(alignment: .leading, spacing: 2.5) {
-                HStack {
-                    HStack(spacing: 3) {
-                        Image(systemName: "calendar.badge.clock")
-                            .font(.system(size: 7.5))
-                            .foregroundColor(weeklyColor)
-                        Text("7-Day Limit")
+            // MARK: - 2. 7-Day Weekly Limit Quota (Tap to toggle Left vs Usage)
+            Button {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                    settings.quotaDisplayMode = (settings.quotaDisplayMode == .remaining ? .used : .remaining)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2.5) {
+                    HStack {
+                        HStack(spacing: 3) {
+                            Image(systemName: "calendar.badge.clock")
+                                .font(.system(size: 7.5))
+                                .foregroundColor(weeklyColor)
+                            Text(isUsageMode ? "7-Day Usage" : "7-Day Left")
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                        Spacer()
+                        Text(metrics.weeklyResetCountdown)
+                            .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
+                            .foregroundColor(Color(red: 0.75, green: 0.55, blue: 1.0))
+                    }
+                    
+                    // Progress Bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.10))
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [weeklyColor, weeklyColor.opacity(0.75)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ))
+                                .frame(width: max(4, geo.size.width * CGFloat(min(1.0, Double(weeklyDisplayPct) / 100.0))))
+                        }
+                    }
+                    .frame(height: 4.5)
+                    
+                    HStack {
+                        Text("\(weeklyDisplayPct)% \(limitSuffix)")
                             .font(.system(size: 8, weight: .bold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.85))
-                    }
-                    Spacer()
-                    Text(metrics.weeklyResetCountdown)
-                        .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
-                        .foregroundColor(Color(red: 0.75, green: 0.55, blue: 1.0))
-                }
-                
-                // Progress Bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.white.opacity(0.10))
-                        Capsule()
-                            .fill(LinearGradient(
-                                colors: [weeklyColor, weeklyColor.opacity(0.75)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ))
-                            .frame(width: max(4, geo.size.width * CGFloat(min(1.0, Double(weeklyPct) / 100.0))))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("Weekly reset")
+                            .font(.system(size: 7, weight: .medium))
+                            .foregroundColor(.secondary)
                     }
                 }
-                .frame(height: 4.5)
-                
-                HStack {
-                    Text("\(weeklyPct)% left")
-                        .font(.system(size: 8, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("Weekly reset")
-                        .font(.system(size: 7, weight: .medium))
-                        .foregroundColor(.secondary)
-                }
+                .padding(5)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.035)))
             }
-            .padding(5)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.035)))
+            .buttonStyle(.plain)
+            .help("Click to toggle between Left Limit and Usage Limit")
             
             Spacer(minLength: 0)
             

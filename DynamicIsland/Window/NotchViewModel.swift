@@ -315,6 +315,11 @@ public final class NotchViewModel: ObservableObject {
         self.isHovering = hovering
         hoverTask?.cancel()
         
+        // While settings page is in use, notch must remain closed
+        if SettingsWindowController.shared.isSettingsOpen {
+            return
+        }
+        
         guard AppSettings.shared.hoverToExpand else { return }
         
         if hovering {
@@ -323,7 +328,7 @@ public final class NotchViewModel: ObservableObject {
                 hoverTask = Task { @MainActor in
                     let delayNanos = UInt64(max(0.05, AppSettings.shared.hoverDelay) * 1_000_000_000)
                     try? await Task.sleep(nanoseconds: delayNanos)
-                    if !Task.isCancelled && self.isHovering && (self.state == .compact || self.state == .hud) {
+                    if !Task.isCancelled && self.isHovering && !SettingsWindowController.shared.isSettingsOpen && (self.state == .compact || self.state == .hud) {
                         self.setExpanded(true)
                     }
                 }
@@ -332,6 +337,9 @@ public final class NotchViewModel: ObservableObject {
     }
     
     public func toggleExpand() {
+        if SettingsWindowController.shared.isSettingsOpen {
+            return
+        }
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             state = (state == .compact || state == .hud) ? .expanded : .compact
             if state == .expanded {
@@ -341,6 +349,9 @@ public final class NotchViewModel: ObservableObject {
     }
     
     public func setExpanded(_ expanded: Bool) {
+        if expanded && SettingsWindowController.shared.isSettingsOpen {
+            return
+        }
         withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
             state = expanded ? .expanded : .compact
             if expanded {

@@ -827,6 +827,29 @@ public struct SettingsView: View {
                 }
             }
             
+            settingsCard(title: "Quota Metric Display Mode") {
+                VStack(spacing: 14) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Limit Display Metric")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.white)
+                            Text("Choose whether quota meters display Left Limit (% remaining) or Usage Limit (% consumed).")
+                                .font(.system(size: 11.5))
+                                .foregroundColor(.white.opacity(0.55))
+                        }
+                        Spacer()
+                        Picker("", selection: $settings.quotaDisplayMode) {
+                            ForEach(QuotaDisplayMode.allCases) { mode in
+                                Text(mode.shortTitle).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 170)
+                    }
+                }
+            }
+            
             settingsCard(title: "AI Companion Connection") {
                 VStack(spacing: 14) {
                     toggleRow(

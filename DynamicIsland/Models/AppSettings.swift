@@ -91,6 +91,21 @@ public enum TelemetryRate: Double, CaseIterable, Identifiable, Codable {
     }
 }
 
+// MARK: - Quota Display Mode
+public enum QuotaDisplayMode: String, CaseIterable, Identifiable, Codable {
+    case remaining = "Left Limit (Remaining)"
+    case used = "Usage Limit (Consumed)"
+    
+    public var id: String { rawValue }
+    
+    public var shortTitle: String {
+        switch self {
+        case .remaining: return "Left"
+        case .used: return "Usage"
+        }
+    }
+}
+
 // MARK: - AppSettings Observable Singleton
 @MainActor
 public final class AppSettings: ObservableObject {
@@ -249,6 +264,11 @@ public final class AppSettings: ObservableObject {
         didSet { defaults.set(showCopilotAgent, forKey: "nb_showCopilotAgent") }
     }
     
+    // Quota Display Mode (Left Limit vs Usage Limit)
+    @Published public var quotaDisplayMode: QuotaDisplayMode {
+        didSet { defaults.set(quotaDisplayMode.rawValue, forKey: "nb_quotaDisplayMode") }
+    }
+    
     public var selectedAgentsList: [CodeAgentType] {
         var list: [CodeAgentType] = []
         if showAntigravityAgent { list.append(.antigravity) }
@@ -340,6 +360,9 @@ public final class AppSettings: ObservableObject {
         self.showCursorAgent = defaults.object(forKey: "nb_showCursorAgent") as? Bool ?? true
         self.showCopilotAgent = defaults.object(forKey: "nb_showCopilotAgent") as? Bool ?? false
         
+        let savedQuotaMode = defaults.string(forKey: "nb_quotaDisplayMode") ?? QuotaDisplayMode.remaining.rawValue
+        self.quotaDisplayMode = QuotaDisplayMode(rawValue: savedQuotaMode) ?? .remaining
+        
         self.pomodoroWorkMinutes = defaults.object(forKey: "nb_pomodoroWorkMinutes") as? Int ?? 25
         self.pomodoroShortBreakMinutes = defaults.object(forKey: "nb_pomodoroShortBreakMinutes") as? Int ?? 5
         self.pomodoroLongBreakMinutes = defaults.object(forKey: "nb_pomodoroLongBreakMinutes") as? Int ?? 15
@@ -406,6 +429,7 @@ public final class AppSettings: ObservableObject {
         showClaudeAgent = true
         showCursorAgent = true
         showCopilotAgent = false
+        quotaDisplayMode = .remaining
         
         pomodoroWorkMinutes = 25
         pomodoroShortBreakMinutes = 5

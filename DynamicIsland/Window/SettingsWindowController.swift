@@ -7,13 +7,16 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
     
     private var window: NSWindow?
     public let settingsModel = SettingsViewModel()
+    public private(set) var isSettingsOpen: Bool = false
     
     public override init() {
         super.init()
     }
     
     public func showWindow(tab: SettingsTab? = nil) {
-        // Automatically collapse the expanded notch when opening Settings
+        isSettingsOpen = true
+        // Automatically collapse and cancel hover when opening Settings
+        NotchWindowController.shared.viewModel.handleHover(false)
         NotchWindowController.shared.viewModel.setExpanded(false)
         
         if let tab = tab {
@@ -57,10 +60,17 @@ public final class SettingsWindowController: NSObject, NSWindowDelegate {
     }
     
     public func closeWindow() {
+        isSettingsOpen = false
         window?.close()
     }
     
+    public func windowDidBecomeKey(_ notification: Notification) {
+        isSettingsOpen = true
+        NotchWindowController.shared.viewModel.handleHover(false)
+        NotchWindowController.shared.viewModel.setExpanded(false)
+    }
+    
     public func windowWillClose(_ notification: Notification) {
-        // Keeps window ready to re-open instantly
+        isSettingsOpen = false
     }
 }
