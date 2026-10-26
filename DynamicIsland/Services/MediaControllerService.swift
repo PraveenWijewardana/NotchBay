@@ -6,12 +6,27 @@ import Combine
 public final class MediaControllerService: ObservableObject {
     @Published public var currentTrack = MediaTrack()
     @Published public var audioFrequencies: [CGFloat] = Array(repeating: 0.1, count: 5)
-    @Published public var isShowingLyrics: Bool = false
+    @Published public var isShowingLyrics: Bool = false {
+        didSet {
+            if isShowingLyrics {
+                fetchLyricsIfNeeded()
+            }
+        }
+    }
+    
+    // MARK: - Lyrics State
+    @Published public var lyricsLines: [LyricLine] = []
+    @Published public var isLyricsLoading: Bool = false
+    @Published public var hasSyncedLyrics: Bool = false
+    @Published public var lyricsErrorMessage: String? = nil
+    @Published public var activeLyricIndex: Int? = nil
     
     private var visualizerTimer: Timer?
     private var playbackTickerTimer: Timer?
     private var artworkCache = [String: Data]()
+    private var lyricsCache = [String: (lines: [LyricLine], isSynced: Bool)]()
     private var currentArtworkFetchTask: Task<Void, Never>?
+    private var currentLyricsFetchTask: Task<Void, Never>?
     private var lastNonZeroVolume: Double = 0.7
     
     public init() {
@@ -23,6 +38,7 @@ public final class MediaControllerService: ObservableObject {
         visualizerTimer?.invalidate()
         playbackTickerTimer?.invalidate()
         currentArtworkFetchTask?.cancel()
+        currentLyricsFetchTask?.cancel()
     }
     
     // MARK: - App Running Detection
@@ -151,6 +167,7 @@ public final class MediaControllerService: ObservableObject {
         // Precise position syncing: snap if track changed or drifting by more than 0.5s
         if trackChanged || abs(currentTrack.currentPosition - position) > 0.5 {
             currentTrack.currentPosition = position
+            updateActiveLyricIndex()
         }
         
         if trackChanged {
@@ -158,7 +175,14 @@ public final class MediaControllerService: ObservableObject {
             currentTrack.artist = artist.isEmpty ? "Unknown Artist" : artist
             currentTrack.album = album
             currentTrack.artworkData = nil
+            lyricsLines = []
+            hasSyncedLyrics = false
+            activeLyricIndex = nil
+            lyricsErrorMessage = nil
             fetchArtwork(title: title, artist: artist, album: album, sourceApp: source)
+            if isShowingLyrics {
+                fetchLyricsIfNeeded()
+            }
         } else if currentTrack.artworkData == nil {
             fetchArtwork(title: title, artist: artist, album: album, sourceApp: source)
         }
@@ -348,6 +372,289 @@ public final class MediaControllerService: ObservableObject {
         }
     }
     
+    // MARK: - Synchronized Lyrics Engine (LRCLIB + Apple Music Integration)
+    public func fetchLyricsIfNeeded() {
+        guard !currentTrack.title.isEmpty,
+              currentTrack.title != "No Media Playing",
+              currentTrack.title != "Unknown Track" else {
+            lyricsLines = []
+            hasSyncedLyrics = false
+            activeLyricIndex = nil
+            lyricsErrorMessage = nil
+            return
+        }
+        
+        let cacheKey = "\(currentTrack.title.lowercased())-\(currentTrack.artist.lowercased())"
+        if let cached = lyricsCache[cacheKey] {
+            self.lyricsLines = cached.lines
+            self.hasSyncedLyrics = cached.isSynced
+            self.lyricsErrorMessage = cached.lines.isEmpty ? "No lyrics found for \"\(currentTrack.title)\"" : nil
+            self.updateActiveLyricIndex()
+            return
+        }
+        
+        fetchLyrics(
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            album: currentTrack.album,
+            duration: currentTrack.duration,
+            sourceApp: currentTrack.sourceAppName
+        )
+    }
+    
+    public func updateActiveLyricIndex() {
+        guard hasSyncedLyrics, !lyricsLines.isEmpty else {
+            if activeLyricIndex != nil { activeLyricIndex = nil }
+            return
+        }
+        let pos = currentTrack.currentPosition
+        var foundIndex: Int? = nil
+        for (idx, line) in lyricsLines.enumerated() {
+            if let t = line.timestamp {
+                if t <= pos + 0.3 {
+                    foundIndex = idx
+                } else {
+                    break
+                }
+            }
+        }
+        if activeLyricIndex != foundIndex {
+            activeLyricIndex = foundIndex
+        }
+    }
+    
+    private func fetchLyrics(
+        title: String,
+        artist: String,
+        album: String,
+        duration: Double,
+        sourceApp: String
+    ) {
+        let cleanTitle = sanitizeSongTitle(title)
+        let cleanArtist = sanitizeArtistName(artist)
+        let cacheKey = "\(title.lowercased())-\(artist.lowercased())"
+        
+        currentLyricsFetchTask?.cancel()
+        isLyricsLoading = true
+        lyricsErrorMessage = nil
+        
+        currentLyricsFetchTask = Task { [weak self] in
+            guard let self = self else { return }
+            
+            // 1. If Apple Music, check native embedded lyrics
+            if sourceApp == "Apple Music" && (self.isMusicRunning) {
+                let script = """
+                tell application "Music"
+                    try
+                        return lyrics of current track
+                    end try
+                    return ""
+                end tell
+                """
+                if let nativeLyrics = self.executeAppleScript(script)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines),
+                   nativeLyrics.count > 10 {
+                    guard !Task.isCancelled else { return }
+                    let parsed = self.parseLyrics(nativeLyrics)
+                    if !parsed.lines.isEmpty {
+                        await MainActor.run {
+                            self.lyricsCache[cacheKey] = (lines: parsed.lines, isSynced: parsed.isSynced)
+                            self.lyricsLines = parsed.lines
+                            self.hasSyncedLyrics = parsed.isSynced
+                            self.isLyricsLoading = false
+                            self.updateActiveLyricIndex()
+                        }
+                        return
+                    }
+                }
+            }
+            
+            // 2. Query LRCLIB (Free, open lyrics API with synced LRC & plain lyrics)
+            var result = await self.requestLRCLIB(title: cleanTitle, artist: cleanArtist, album: album, duration: duration)
+            
+            // Retry with raw title if sanitized title didn't find a match
+            if result == nil && (cleanTitle != title || cleanArtist != artist) {
+                result = await self.requestLRCLIB(title: title, artist: artist, album: album, duration: duration)
+            }
+            
+            guard !Task.isCancelled else { return }
+            
+            await MainActor.run {
+                self.isLyricsLoading = false
+                if let result = result, !result.lines.isEmpty {
+                    self.lyricsCache[cacheKey] = (lines: result.lines, isSynced: result.isSynced)
+                    self.lyricsLines = result.lines
+                    self.hasSyncedLyrics = result.isSynced
+                    self.lyricsErrorMessage = nil
+                    self.updateActiveLyricIndex()
+                } else {
+                    self.lyricsCache[cacheKey] = (lines: [], isSynced: false)
+                    self.lyricsLines = []
+                    self.hasSyncedLyrics = false
+                    self.lyricsErrorMessage = "No lyrics found for \"\(title)\""
+                }
+            }
+        }
+    }
+    
+    private nonisolated func requestLRCLIB(
+        title: String,
+        artist: String,
+        album: String,
+        duration: Double
+    ) async -> (lines: [LyricLine], isSynced: Bool)? {
+        guard !title.isEmpty else { return nil }
+        
+        var components = URLComponents(string: "https://lrclib.net/api/get")
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "track_name", value: title)
+        ]
+        if !artist.isEmpty && artist != "Unknown Artist" {
+            queryItems.append(URLQueryItem(name: "artist_name", value: artist))
+        }
+        if duration > 10 {
+            queryItems.append(URLQueryItem(name: "duration", value: String(Int(duration))))
+        }
+        components?.queryItems = queryItems
+        
+        guard let url = components?.url else { return nil }
+        
+        var request = URLRequest(url: url)
+        request.setValue("NotchBay/1.0 (https://github.com/PraveenWijewardana/NotchBay)", forHTTPHeaderField: "User-Agent")
+        request.timeoutInterval = 7.0
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            if let httpRes = response as? HTTPURLResponse, httpRes.statusCode == 200 {
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let synced = json["syncedLyrics"] as? String, !synced.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        let parsed = self.parseLRC(synced)
+                        if !parsed.isEmpty {
+                            return (lines: parsed, isSynced: true)
+                        }
+                    }
+                    if let plain = json["plainLyrics"] as? String, !plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        let parsed = self.parsePlain(plain)
+                        if !parsed.isEmpty {
+                            return (lines: parsed, isSynced: false)
+                        }
+                    }
+                }
+            } else {
+                // If query with duration was not found or 503, retry without duration parameter
+                if duration > 10 {
+                    var retryComp = URLComponents(string: "https://lrclib.net/api/get")
+                    var retryItems: [URLQueryItem] = [
+                        URLQueryItem(name: "track_name", value: title)
+                    ]
+                    if !artist.isEmpty && artist != "Unknown Artist" {
+                        retryItems.append(URLQueryItem(name: "artist_name", value: artist))
+                    }
+                    retryComp?.queryItems = retryItems
+                    if let retryURL = retryComp?.url {
+                        var retryReq = URLRequest(url: retryURL)
+                        retryReq.setValue("NotchBay/1.0 (https://github.com/PraveenWijewardana/NotchBay)", forHTTPHeaderField: "User-Agent")
+                        retryReq.timeoutInterval = 7.0
+                        if let (retryData, retryRes) = try? await URLSession.shared.data(for: retryReq),
+                           let httpRetry = retryRes as? HTTPURLResponse, httpRetry.statusCode == 200,
+                           let json = try? JSONSerialization.jsonObject(with: retryData) as? [String: Any] {
+                            if let synced = json["syncedLyrics"] as? String, !synced.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                let parsed = self.parseLRC(synced)
+                                if !parsed.isEmpty {
+                                    return (lines: parsed, isSynced: true)
+                                }
+                            }
+                            if let plain = json["plainLyrics"] as? String, !plain.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                let parsed = self.parsePlain(plain)
+                                if !parsed.isEmpty {
+                                    return (lines: parsed, isSynced: false)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {
+            return nil
+        }
+        return nil
+    }
+    
+    private nonisolated func parseLRC(_ lrc: String) -> [LyricLine] {
+        var result: [LyricLine] = []
+        let lines = lrc.components(separatedBy: .newlines)
+        var lineId = 0
+        let pattern = #"^\[(\d{1,2}):(\d{1,2}(?:\.\d{1,3})?)\](.*)$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        
+        for rawLine in lines {
+            let trimmed = rawLine.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+            
+            let range = NSRange(location: 0, length: trimmed.utf16.count)
+            if let match = regex.firstMatch(in: trimmed, options: [], range: range) {
+                if let minRange = Range(match.range(at: 1), in: trimmed),
+                   let secRange = Range(match.range(at: 2), in: trimmed),
+                   let textRange = Range(match.range(at: 3), in: trimmed) {
+                    let mins = Double(trimmed[minRange]) ?? 0
+                    let secs = Double(trimmed[secRange]) ?? 0
+                    let totalSec = (mins * 60.0) + secs
+                    let text = trimmed[textRange].trimmingCharacters(in: .whitespaces)
+                    result.append(LyricLine(id: lineId, timestamp: totalSec, text: text.isEmpty ? "•••" : text))
+                    lineId += 1
+                }
+            }
+        }
+        return result
+    }
+    
+    private nonisolated func parsePlain(_ plain: String) -> [LyricLine] {
+        let lines = plain.components(separatedBy: .newlines)
+        var result: [LyricLine] = []
+        var lineId = 0
+        for line in lines {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if !trimmed.isEmpty {
+                result.append(LyricLine(id: lineId, timestamp: nil, text: trimmed))
+                lineId += 1
+            }
+        }
+        return result
+    }
+    
+    private nonisolated func parseLyrics(_ text: String) -> (lines: [LyricLine], isSynced: Bool) {
+        if text.contains("[00:") || text.contains("[01:") || text.contains("[02:") {
+            let lrc = parseLRC(text)
+            if !lrc.isEmpty {
+                return (lines: lrc, isSynced: true)
+            }
+        }
+        return (lines: parsePlain(text), isSynced: false)
+    }
+    
+    private nonisolated func sanitizeSongTitle(_ title: String) -> String {
+        var cleaned = title
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\s*[\(\[](?:feat\.|ft\.|with|remastered|deluxe|bonus|version|edition|live|official).*?[\)\]]"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        cleaned = cleaned.replacingOccurrences(
+            of: #"\s*-\s*(?:remastered|live|deluxe|version|edition).*$"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    private nonisolated func sanitizeArtistName(_ artist: String) -> String {
+        let parts = artist.components(separatedBy: ",")
+        if let first = parts.first, !first.isEmpty {
+            return first.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return artist.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
     // MARK: - Playback Controls (Optimistic UI + Verified Sync)
     public func togglePlayPause() {
         let isSpotify = (currentTrack.sourceAppName == "Spotify" || isSpotifyRunning) && isSpotifyRunning
@@ -419,6 +726,7 @@ public final class MediaControllerService: ObservableObject {
     public func seek(to seconds: Double) {
         let clamped = max(0, min(seconds, currentTrack.duration))
         currentTrack.currentPosition = clamped
+        updateActiveLyricIndex()
         
         let isSpotify = (currentTrack.sourceAppName == "Spotify" || isSpotifyRunning) && isSpotifyRunning
         let isMusic = (currentTrack.sourceAppName == "Apple Music" || isMusicRunning) && isMusicRunning
@@ -502,6 +810,7 @@ public final class MediaControllerService: ObservableObject {
                     if self.currentTrack.currentPosition < self.currentTrack.duration {
                         self.currentTrack.currentPosition += 1.0
                     }
+                    self.updateActiveLyricIndex()
                     self.tickerTickCount += 1
                     // Actively resync ground truth position from Spotify/Music every 2s to eliminate drift
                     if self.tickerTickCount % 2 == 0 {
@@ -536,6 +845,7 @@ public final class MediaControllerService: ObservableObject {
                             if abs(self.currentTrack.currentPosition - pos) > 0.5 {
                                 self.currentTrack.currentPosition = pos
                             }
+                            self.updateActiveLyricIndex()
                         }
                         return
                     }
@@ -555,6 +865,7 @@ public final class MediaControllerService: ObservableObject {
                             if abs(self.currentTrack.currentPosition - pos) > 0.5 {
                                 self.currentTrack.currentPosition = pos
                             }
+                            self.updateActiveLyricIndex()
                         }
                         return
                     }

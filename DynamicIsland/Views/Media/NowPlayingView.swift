@@ -296,46 +296,115 @@ public struct NowPlayingView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
         }
+        .onAppear {
+            if mediaService.isShowingLyrics {
+                mediaService.fetchLyricsIfNeeded()
+            }
+        }
     }
     
     // MARK: - Synchronized Lyrics View
     private var lyricsView: some View {
         VStack(spacing: 8) {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(mediaService.currentTrack.title)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.5))
-                    
-                    Text("♪ Playing on \(sourceDisplayName)")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.6))
-                    
-                    // Current Active Line (Apple Music Neon Typography)
-                    Text("♪ \(mediaService.currentTrack.title) — \(mediaService.currentTrack.artist)")
-                        .font(.system(size: 16, weight: .heavy, design: .rounded))
-                        .foregroundColor(Color(red: 1.0, green: 0.45, blue: 0.65))
-                        .shadow(color: Color(red: 1.0, green: 0.3, blue: 0.6).opacity(0.5), radius: 6)
-                    
-                    if !mediaService.currentTrack.album.isEmpty {
-                        Text("Album: \(mediaService.currentTrack.album)")
-                            .font(.system(size: 12.5, weight: .medium, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
+            ZStack {
+                // Background subtle card
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.white.opacity(0.04))
+                
+                if mediaService.isLyricsLoading {
+                    VStack(spacing: 8) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: Color(red: 1.0, green: 0.35, blue: 0.55)))
+                            .scaleEffect(0.9)
+                        Text("Loading lyrics...")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
                     }
-                    
-                    Text("Time Elapsed: \(mediaService.currentTrack.elapsedFormatted) / \(mediaService.currentTrack.duration > 0 ? mediaService.currentTrack.remainingFormatted : "")")
-                        .font(.system(size: 11.5, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.45))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if mediaService.lyricsLines.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "music.mic")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.35))
+                        Text(mediaService.lyricsErrorMessage ?? "No lyrics found for \"\(mediaService.currentTrack.title)\"")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 16)
+                        
+                        Button {
+                            mediaService.fetchLyricsIfNeeded()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.clockwise")
+                                    .font(.system(size: 10))
+                                Text("Retry")
+                                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(0.12))
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollViewReader { proxy in
+                        ScrollView(.vertical, showsIndicators: false) {
+                            LazyVStack(alignment: .leading, spacing: mediaService.hasSyncedLyrics ? 12 : 8) {
+                                ForEach(Array(mediaService.lyricsLines.enumerated()), id: \.element.id) { index, line in
+                                    let isActive = (mediaService.activeLyricIndex == index)
+                                    
+                                    Button {
+                                        if let ts = line.timestamp {
+                                            mediaService.seek(to: ts)
+                                        }
+                                    } label: {
+                                        Text(line.text)
+                                            .font(.system(
+                                                size: mediaService.hasSyncedLyrics ? (isActive ? 15.5 : 13.5) : 13.5,
+                                                weight: (mediaService.hasSyncedLyrics && isActive) ? .bold : .medium,
+                                                design: .rounded
+                                            ))
+                                            .foregroundColor(
+                                                mediaService.hasSyncedLyrics
+                                                    ? (isActive ? .white : .white.opacity(0.38))
+                                                    : .white.opacity(0.9)
+                                            )
+                                            .shadow(
+                                                color: (mediaService.hasSyncedLyrics && isActive)
+                                                    ? Color(red: 1.0, green: 0.35, blue: 0.6).opacity(0.7)
+                                                    : .clear,
+                                                radius: 6
+                                            )
+                                            .scaleEffect((mediaService.hasSyncedLyrics && isActive) ? 1.02 : 1.0, anchor: .leading)
+                                            .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isActive)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .id(index)
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                        }
+                        .onChange(of: mediaService.activeLyricIndex) { newIndex in
+                            if let idx = newIndex, mediaService.hasSyncedLyrics {
+                                withAnimation(.easeInOut(duration: 0.35)) {
+                                    proxy.scrollTo(idx, anchor: .center)
+                                }
+                            }
+                        }
+                    }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(height: 125)
-            .background(Color.white.opacity(0.04))
+            .frame(height: 140)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             
-            // Mini Bottom Scrubber
+            // Mini Bottom Scrubber & Controls
             HStack(spacing: 8) {
                 Text(mediaService.currentTrack.elapsedFormatted)
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -365,12 +434,34 @@ public struct NowPlayingView: View {
                 }
                 .frame(height: 10)
                 
+                Text(mediaService.currentTrack.remainingFormatted)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundColor(.white.opacity(0.55))
+                
+                Button {
+                    mediaService.previousTrack()
+                } label: {
+                    Image(systemName: "backward.fill")
+                        .font(.system(size: 9.5))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                .buttonStyle(.plain)
+                
                 Button {
                     mediaService.togglePlayPause()
                 } label: {
                     Image(systemName: mediaService.currentTrack.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundColor(.white)
+                }
+                .buttonStyle(.plain)
+                
+                Button {
+                    mediaService.nextTrack()
+                } label: {
+                    Image(systemName: "forward.fill")
+                        .font(.system(size: 9.5))
+                        .foregroundColor(.white.opacity(0.8))
                 }
                 .buttonStyle(.plain)
             }

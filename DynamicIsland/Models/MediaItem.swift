@@ -56,6 +56,18 @@ public struct MediaTrack: Sendable {
     }
 }
 
+public struct LyricLine: Identifiable, Equatable, Sendable {
+    public let id: Int
+    public let timestamp: Double? // in seconds, nil if plain
+    public let text: String
+    
+    public init(id: Int, timestamp: Double? = nil, text: String) {
+        self.id = id
+        self.timestamp = timestamp
+        self.text = text
+    }
+}
+
 public enum ShelfItemType: String, Sendable, CaseIterable {
     case all = "All"
     case link = "Links"
